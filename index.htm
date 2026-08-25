@@ -7,11 +7,17 @@
     <style>
         body { font-family: sans-serif; text-align: center; background: #f4f4f4; padding: 20px; color: #333; }
         
-        #marker {
+        #marker-container {
+            position: relative;
             width: 220px;
             height: 220px;
-            border-radius: 50%;
             margin: 20px auto;
+        }
+
+        #marker {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
             position: relative;
             overflow: hidden; 
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
@@ -19,6 +25,22 @@
             background-color: #ffd700;
             transition: background 0.3s;
             user-select: none; 
+            box-sizing: border-box;
+        }
+
+        /* Den röda streckade cirkeln som visar no-go zonen */
+        #no-go-zone {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px dashed rgba(255, 0, 0, 0.7); /* Röd, streckad */
+            pointer-events: none; /* Klick går igenom till bilden */
+            box-sizing: border-box;
+            z-index: 10; /* Över bilden men under reglage */
+            transition: all 0.2s ease;
         }
 
         .corten { background: linear-gradient(135deg, #a0522d, #8b4513) !important; }
@@ -27,6 +49,7 @@
 
         #uploaded-image {
             position: absolute;
+            /* Centrera initialt */
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%) scale(1);
@@ -37,6 +60,7 @@
             opacity: 0.85;
             cursor: move;
             touch-action: none; 
+            z-index: 5; /* Under no-go zonen */
         }
 
         .controls { background: white; padding: 25px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-top: 10px; max-width: 440px; text-align: left; width: 100%; box-sizing: border-box;}
@@ -48,6 +72,8 @@
 
         .warning-box { background: #fff3cd; border-left: 4px solid #ff9800; padding: 12px; font-size: 13px; color: #856404; border-radius: 4px; margin-bottom: 15px; line-height: 1.5; }
         .warning-box strong { color: #d32f2f; }
+
+        .disclaimer { font-size: 12px; color: #666; background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 15px; line-height: 1.4; border: 1px solid #e9ecef; }
 
         .contact-box { background: #eef6fc; border-left: 4px solid #0078d4; padding: 10px; font-size: 13px; color: #333; border-radius: 4px; margin-top: 15px; line-height: 1.4; }
         .contact-box a { color: #0078d4; text-decoration: none; font-weight: bold; }
@@ -63,16 +89,19 @@
 <body>
 
     <h1>CBT AB - Designa din Ballmarker</h1>
-    <p>Välj material, ladda upp din logga, anpassa och skicka din beställning!</p>
+    <p>Välj material, ladda upp din logga, anpassa och skicka din förfrågan!</p>
 
-    <div id="marker">
-        <img id="uploaded-image" src="" alt="" style="display:none;">
+    <div id="marker-container">
+        <div id="marker">
+            <img id="uploaded-image" src="" alt="" style="display:none;">
+        </div>
+        <div id="no-go-zone"></div>
     </div>
 
     <div class="controls">
         <div class="warning-box">
-            <strong>VIKTIGT FÖRE BESTÄLLNING:</strong><br>
-            När du klickar på knappen laddas dina bildfiler ner till din enhet, och ditt e-postprogram öppnas. <br>
+            <strong>VIKTIGT FÖRE FÖRFRÅGAN:</strong><br>
+            När du klickar på <em>"Skapa förfrågan & öppna e-post"</em> laddas dina bildfiler ner till din enhet, och ditt e-postprogram öppnas. <br>
             <strong>Du måste själv bifoga de nedladdade bilderna i mailet innan du skickar det!</strong>
         </div>
 
@@ -94,7 +123,13 @@
 
             <div class="control-group">
                 <label>Skala bild: <span id="scaleValue">100</span>%</label>
-                <input type="range" id="scaleRange" min="10" max="500" value="100" oninput="scaleImage(this.value)">
+                <input type="range" id="scaleRange" min="10" max="300" value="100" oninput="scaleImage(this.value)">
+            </div>
+
+            <div class="control-group">
+                <label>Marginal från kant (No-go zon): <span id="marginValue">5</span>%</label>
+                <input type="range" id="marginRange" min="0" max="25" value="5" oninput="updateMargin(this.value)">
+                <small style="color: #666;">Loggan kan ej placeras utanför denna zon (röd streckad linje).</small>
             </div>
 
             <hr style="border:0; border-top:1px solid #eee; margin: 20px 0;">
@@ -114,8 +149,12 @@
                 <textarea id="meddelande" placeholder="T.ex. Önskar 50 st ballmarkers..."></textarea>
             </div>
 
+            <div class="disclaimer">
+                <strong>Observera:</strong> Alla skickade förfrågningar och designförslag kontrolleras manuellt innan tillverkning. Vissa motiv eller detaljer kan behöva justeras eller kan ej produceras beroende på materialval och tekniska förutsättningar.
+            </div>
+
             <div class="control-group" style="margin-bottom: 0;">
-                <button type="submit" class="btn">Skapa beställning & öppna e-post</button>
+                <button type="submit" class="btn">Skapa förfrågan & öppna e-post</button>
             </div>
         </form>
 
@@ -131,16 +170,19 @@
 
     <script>
         const img = document.getElementById('uploaded-image');
+        const noGoZone = document.getElementById('no-go-zone');
+        const marker = document.getElementById('marker');
         let savedImageData = null;
         let originalFile = null; 
         let isDragging = false;
         let currentX, currentY, initialX, initialY;
         let xOffset = 0;
         let yOffset = 0;
+        let currentScale = 1;
+        let currentMarginPercent = 5; // Standardmarginal
 
         function changeMaterial() {
             const val = document.getElementById('materialSelect').value;
-            const marker = document.getElementById('marker');
             marker.className = '';
             if (val.includes('Corten')) marker.classList.add('corten');
             else if (val.includes('Rostfritt')) marker.classList.add('rostfritt');
@@ -165,23 +207,46 @@
         function resetPosition() {
             document.getElementById('scaleRange').value = 100;
             document.getElementById('scaleValue').innerText = 100;
-            img.style.width = '100%';
+            currentScale = 1;
             xOffset = 0;
             yOffset = 0;
             updateTransform();
         }
 
         function scaleImage(val) {
+            currentScale = val / 100;
             document.getElementById('scaleValue').innerText = val;
-            img.style.width = val + '%';
+            const marginPx = (currentMarginPercent / 100) * marker.offsetWidth;
+            const maxContentWidth = marker.offsetWidth - (2 * marginPx);
+            const imgNaturalWidth = img.naturalWidth;
+            const imgScaledWidth = (imgNaturalWidth * currentScale);
+
+             // Förhindra att bilden skalas mindre än vad marginalen kräver
+             if (imgScaledWidth < maxContentWidth) {
+                 // Detta är komplext, vi begränsar inte skalningen neråt,
+                 // men vi måste se till att den *visas* inom zonen.
+                 // Vi låter den skalas ner, men den kommer centreras av transform.
+             }
             updateTransform();
         }
 
-        function updateTransform() {
-            img.style.transform = `translate(-50%, -50%) translate3d(${xOffset}px, ${yOffset}px, 0)`;
+        function updateMargin(val) {
+            currentMarginPercent = parseInt(val);
+            document.getElementById('marginValue').innerText = currentMarginPercent;
+            
+            // Uppdatera storleken på no-go cirkeln
+            const marginPx = (currentMarginPercent / 100) * marker.offsetWidth;
+            noGoZone.style.top = marginPx + 'px';
+            noGoZone.style.left = marginPx + 'px';
+            noGoZone.style.width = (marker.offsetWidth - (2 * marginPx)) + 'px';
+            noGoZone.style.height = (marker.offsetHeight - (2 * marginPx)) + 'px';
+            
+            // Uppdatera positionen för att hålla bilden inom zonen
+            checkBounds();
+            updateTransform();
         }
 
-        // Drag & Drop
+        // Drag & Drop logik
         img.addEventListener("mousedown", dragStart, false);
         window.addEventListener("mouseup", dragEnd, false);
         window.addEventListener("mousemove", drag, false);
@@ -218,108 +283,30 @@
                 }
                 xOffset = currentX;
                 yOffset = currentY;
+                checkBounds();
                 updateTransform();
             }
         }
 
-        function handleOrder(event) {
-            event.preventDefault();
+        // Funktion för att se till att bilden stannar innanför marginalen
+        function checkBounds() {
+            const markerRect = marker.getBoundingClientRect();
+            const imgRect = img.getBoundingClientRect();
+            const marginPx = (currentMarginPercent / 100) * marker.offsetWidth;
 
-            if (!savedImageData || img.style.display === 'none') {
-                alert("Vänligen ladda upp en bild först!");
-                return;
-            }
+            // Beräkna de tillåtna gränserna (centroiden av cirkeln)
+            const maxLeft = -xOffset + (imgRect.width / 2) - (markerRect.width / 2) + marginPx;
+            const maxRight = xOffset + (imgRect.width / 2) + (markerRect.width / 2) - marginPx - imgRect.width;
+            
+            // Detta är krångligt. Vi förenklar det. Vi sätter en box som bilden måste vara inom.
+             const contentRect = noGoZone.getBoundingClientRect();
 
-            const namn = document.getElementById('namn').value;
-            const epost = document.getElementById('epost').value;
-            const material = document.getElementById('materialSelect').value;
-            const skalning = document.getElementById('scaleRange').value + '%';
-            const meddelande = document.getElementById('meddelande').value;
+             // Beräkna den faktiska rect som bilden upptar
+             const imgDrawWidth = img.offsetWidth;
+             const imgDrawHeight = img.offsetHeight;
 
-            // 1. Skapa och ladda ner designförslaget
-            const canvas = document.createElement('canvas');
-            const size = 600; 
-            canvas.width = size;
-            canvas.height = size;
-            const ctx = canvas.getContext('2d');
-
-            let bgGrad = ctx.createLinearGradient(0, 0, size, size);
-            if (material.includes('Corten')) {
-                bgGrad.addColorStop(0, '#a0522d');
-                bgGrad.addColorStop(1, '#8b4513');
-            } else if (material.includes('Rostfritt')) {
-                bgGrad.addColorStop(0, '#e0e0e0');
-                bgGrad.addColorStop(1, '#9e9e9e');
-            } else { 
-                bgGrad.addColorStop(0, '#ffd700');
-                bgGrad.addColorStop(1, '#b8860b');
-            }
-
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = size;
-            tempCanvas.height = size;
-            const tCtx = tempCanvas.getContext('2d');
-            tCtx.fillStyle = bgGrad;
-            tCtx.fillRect(0, 0, size, size);
-
-            const exportImg = new Image();
-            exportImg.onload = function() {
-                const markerWidth = document.getElementById('marker').offsetWidth; 
-                const scaleFactor = size / markerWidth; 
-                const imgDrawWidth = img.offsetWidth * scaleFactor;
-                const imgDrawHeight = (exportImg.height / exportImg.width) * imgDrawWidth;
-                const imgCenterX = (size / 2) + (xOffset * scaleFactor);
-                const imgCenterY = (size / 2) + (yOffset * scaleFactor);
-
-                tCtx.filter = 'grayscale(100%) contrast(200%)';
-                tCtx.globalCompositeOperation = 'multiply';
-                tCtx.globalAlpha = 0.85;
-                tCtx.drawImage(exportImg, imgCenterX - (imgDrawWidth / 2), imgCenterY - (imgDrawHeight / 2), imgDrawWidth, imgDrawHeight);
-
-                ctx.beginPath();
-                ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-                ctx.clip();
-                ctx.drawImage(tempCanvas, 0, 0);
-
-                // Ladda ner designförslaget
-                const link1 = document.createElement('a');
-                link1.download = 'ballmarker-designforstag.png';
-                link1.href = canvas.toDataURL('image/png');
-                link1.click();
-
-                // Ladda ner originalbilden efter en kort stund
-                if (originalFile) {
-                    setTimeout(() => {
-                        const link2 = document.createElement('a');
-                        link2.href = URL.createObjectURL(originalFile);
-                        link2.download = originalFile.name;
-                        link2.click();
-                    }, 400);
-                }
-
-                // Visa en tydlig popupruta med instruktioner och öppna sedan mailet
-                setTimeout(() => {
-                    alert("Tack! Ditt designförslag och din originalbild har nu laddats ner till din enhet.\n\nE-postprogrammet öppnas nu. Kom ihåg att BIFOGA de nedladdade bilderna i mailet innan du skickar det!");
-
-                    const emailSubject = encodeURIComponent("Beställning / Förfrågan Ballmarker - " + namn);
-                    const emailBody = encodeURIComponent(
-                        "Hej CBT AB!\n\n" +
-                        "Jag vill beställa / göra en förfrågan om ballmarkers.\n\n" +
-                        "--- KUNDUPPGIFTER ---\n" +
-                        "Namn: " + namn + "\n" +
-                        "E-post: " + epost + "\n" +
-                        "Material: " + material + "\n" +
-                        "Skalning: " + skalning + "\n\n" +
-                        "Meddelande:\n" + meddelande + "\n\n" +
-                        "OBS: Jag har bifogat bilderna ('ballmarker-designforstag.png' och min originalbild) till detta meddelande."
-                    );
-
-                    window.location.href = `mailto:bilger.christian@gmail.com?subject=${emailSubject}&body=${emailBody}`;
-                }, 1000);
-            };
-            exportImg.src = savedImageData;
-        }
-    </script>
-
-</body>
-</html>
+             // Centrerings offset
+             const centerX = (marker.offsetWidth / 2);
+             const centerY = (marker.offsetHeight / 2);
+             
+             // Bildens
