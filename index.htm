@@ -322,6 +322,11 @@
             canvas.height = size;
             const ctx = canvas.getContext('2d');
 
+            // Klipp hela canvasen till en perfekt cirkel direkt
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+            ctx.clip();
+
             let bgGrad = ctx.createLinearGradient(0, 0, size, size);
             if (material.includes('Corten')) {
                 bgGrad.addColorStop(0, '#a0522d');
@@ -334,11 +339,8 @@
                 bgGrad.addColorStop(1, '#b8860b');
             }
 
-            ctx.beginPath();
-            ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
             ctx.fillStyle = bgGrad;
-            ctx.fill();
-            ctx.clip();
+            ctx.fillRect(0, 0, size, size);
 
             const exportImg = new Image();
             exportImg.onload = function() {
@@ -358,11 +360,12 @@
 
                 const marginPercent = parseInt(document.getElementById('marginRange').value);
                 if (marginPercent > 0) {
-                    const marginPxCanvas = (marginPercent / 100) * (size / 2);
+                    const marginPxScreen = (marginPercent / 100) * (markerWidth / 2);
+                    const marginPxCanvas = marginPxScreen * scaleFactor;
                     const innerRadius = (size / 2) - marginPxCanvas;
 
                     ctx.beginPath();
-                    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2, false);
+                    ctx.arc(size / 2, size / 2, size + 100, 0, Math.PI * 2, false);
                     ctx.arc(size / 2, size / 2, innerRadius, 0, Math.PI * 2, true);
                     ctx.fillStyle = bgGrad;
                     ctx.fill();
