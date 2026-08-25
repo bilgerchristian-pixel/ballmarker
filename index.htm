@@ -28,6 +28,21 @@
             box-sizing: border-box;
         }
 
+        /* En ring som täcker bilden i marginalen baserat på vald storlek */
+        #margin-mask {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            pointer-events: none;
+            box-sizing: border-box;
+            z-index: 6; /* Ligger över bilden men under den röda linjen */
+            box-shadow: inset 0 0 0 0px #ffd700; /* Styrs via JS */
+            transition: border-width 0.1s ease, box-shadow 0.3s;
+        }
+
         #margin-line {
             position: absolute;
             top: 0;
@@ -91,6 +106,7 @@
     <div id="marker-container">
         <div id="marker">
             <img id="uploaded-image" src="" alt="" style="display:none;">
+            <div id="margin-mask"></div>
         </div>
         <div id="margin-line"></div>
     </div>
@@ -126,7 +142,7 @@
             <div class="control-group">
                 <label>Marginal från kant: <span id="marginValue">5</span>%</label>
                 <input type="range" id="marginRange" min="0" max="25" value="5" oninput="updateMargin(this.value)">
-                <small style="color: #666;">Visas som röd streckad linje på markören.</small>
+                <small style="color: #666;">Döljer loggan utanför den röda streckade linjen.</small>
             </div>
 
             <hr style="border:0; border-top:1px solid #eee; margin: 20px 0;">
@@ -168,6 +184,7 @@
     <script>
         const img = document.getElementById('uploaded-image');
         const marginLine = document.getElementById('margin-line');
+        const marginMask = document.getElementById('margin-mask');
         const marker = document.getElementById('marker');
         let savedImageData = null;
         let originalFile = null; 
@@ -186,6 +203,8 @@
             if (val.includes('Corten')) marker.classList.add('corten');
             else if (val.includes('Rostfritt')) marker.classList.add('rostfritt');
             else marker.classList.add('massing');
+            
+            updateMargin(document.getElementById('marginRange').value);
         }
 
         function handleImageUpload(event) {
@@ -225,11 +244,20 @@
             const markerSize = marker.offsetWidth;
             const marginPx = (marginPercent / 100) * (markerSize / 2);
             
+            // Flytta den röda streckade linjen
             marginLine.style.top = marginPx + 'px';
             marginLine.style.left = marginPx + 'px';
             marginLine.style.width = (markerSize - (2 * marginPx)) + 'px';
             marginLine.style.height = (markerSize - (2 * marginPx)) + 'px';
             marginLine.style.borderRadius = '50%';
+
+            // Skapa en maskeringseffekt (en fet kant runt masken som täcker bilden i marginalen)
+            let bgColor = '#ffd700';
+            const valMat = document.getElementById('materialSelect').value;
+            if (valMat.includes('Corten')) bgColor = '#8b4513';
+            else if (valMat.includes('Rostfritt')) bgColor = '#c0c0c0';
+
+            marginMask.style.border = `${marginPx}px solid ${bgColor}`;
         }
 
         function updateTransform() {
@@ -330,6 +358,20 @@
                 tCtx.globalCompositeOperation = 'multiply';
                 tCtx.globalAlpha = 0.85;
                 tCtx.drawImage(exportImg, imgCenterX - (imgDrawWidth / 2), imgCenterY - (imgDrawHeight / 2), imgDrawWidth, imgDrawHeight);
+
+                // Applicera även marginalmasken på exportbilden om marginalen är > 0
+                const marginPercent = parseInt(document.getElementById('marginRange').value);
+                if (marginPercent > 0) {
+                    const marginPxCanvas = (marginPercent / 100) * (size / 2);
+                    tCtx.globalCompositeOperation = 'source-over';
+                    tCtx.filter = 'none';
+                    tCtx.globalAlpha = 1.0;
+                    tCtx.strokeStyle = bgGrad;
+                    tCtx.lineWidth = marginPxCanvas * 2;
+                    tCtx.beginPath();
+                    tCtx.arc(size / 2, size / 2, (size / 2) - (marginPxCanvas), 0, Math.PI * 2);
+                    tCtx.stroke();
+                }
 
                 ctx.beginPath();
                 ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
