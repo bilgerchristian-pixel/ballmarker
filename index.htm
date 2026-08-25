@@ -28,7 +28,6 @@
             box-sizing: border-box;
         }
 
-        /* En ring som täcker bilden i marginalen baserat på vald storlek */
         #margin-mask {
             position: absolute;
             top: 0;
@@ -38,8 +37,7 @@
             border-radius: 50%;
             pointer-events: none;
             box-sizing: border-box;
-            z-index: 6; /* Ligger över bilden men under den röda linjen */
-            box-shadow: inset 0 0 0 0px #ffd700; /* Styrs via JS */
+            z-index: 6; 
             transition: border-width 0.1s ease, box-shadow 0.3s;
         }
 
@@ -244,18 +242,16 @@
             const markerSize = marker.offsetWidth;
             const marginPx = (marginPercent / 100) * (markerSize / 2);
             
-            // Flytta den röda streckade linjen
             marginLine.style.top = marginPx + 'px';
             marginLine.style.left = marginPx + 'px';
             marginLine.style.width = (markerSize - (2 * marginPx)) + 'px';
             marginLine.style.height = (markerSize - (2 * marginPx)) + 'px';
             marginLine.style.borderRadius = '50%';
 
-            // Skapa en maskeringseffekt (en fet kant runt masken som täcker bilden i marginalen)
-            let bgColor = '#ffd700';
+            let bgColor = '#b8860b';
             const valMat = document.getElementById('materialSelect').value;
             if (valMat.includes('Corten')) bgColor = '#8b4513';
-            else if (valMat.includes('Rostfritt')) bgColor = '#c0c0c0';
+            else if (valMat.includes('Rostfritt')) bgColor = '#9e9e9e';
 
             marginMask.style.border = `${marginPx}px solid ${bgColor}`;
         }
@@ -338,12 +334,11 @@
                 bgGrad.addColorStop(1, '#b8860b');
             }
 
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = size;
-            tempCanvas.height = size;
-            const tCtx = tempCanvas.getContext('2d');
-            tCtx.fillStyle = bgGrad;
-            tCtx.fillRect(0, 0, size, size);
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+            ctx.fillStyle = bgGrad;
+            ctx.fill();
+            ctx.clip();
 
             const exportImg = new Image();
             exportImg.onload = function() {
@@ -354,29 +349,24 @@
                 const imgCenterX = (size / 2) + (xOffset * scaleFactor);
                 const imgCenterY = (size / 2) + (yOffset * scaleFactor);
 
-                tCtx.filter = 'grayscale(100%) contrast(200%)';
-                tCtx.globalCompositeOperation = 'multiply';
-                tCtx.globalAlpha = 0.85;
-                tCtx.drawImage(exportImg, imgCenterX - (imgDrawWidth / 2), imgCenterY - (imgDrawHeight / 2), imgDrawWidth, imgDrawHeight);
+                ctx.save();
+                ctx.filter = 'grayscale(100%) contrast(200%)';
+                ctx.globalCompositeOperation = 'multiply';
+                ctx.globalAlpha = 0.85;
+                ctx.drawImage(exportImg, imgCenterX - (imgDrawWidth / 2), imgCenterY - (imgDrawHeight / 2), imgDrawWidth, imgDrawHeight);
+                ctx.restore();
 
-                // Applicera även marginalmasken på exportbilden om marginalen är > 0
                 const marginPercent = parseInt(document.getElementById('marginRange').value);
                 if (marginPercent > 0) {
                     const marginPxCanvas = (marginPercent / 100) * (size / 2);
-                    tCtx.globalCompositeOperation = 'source-over';
-                    tCtx.filter = 'none';
-                    tCtx.globalAlpha = 1.0;
-                    tCtx.strokeStyle = bgGrad;
-                    tCtx.lineWidth = marginPxCanvas * 2;
-                    tCtx.beginPath();
-                    tCtx.arc(size / 2, size / 2, (size / 2) - (marginPxCanvas), 0, Math.PI * 2);
-                    tCtx.stroke();
-                }
+                    const innerRadius = (size / 2) - marginPxCanvas;
 
-                ctx.beginPath();
-                ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-                ctx.clip();
-                ctx.drawImage(tempCanvas, 0, 0);
+                    ctx.beginPath();
+                    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2, false);
+                    ctx.arc(size / 2, size / 2, innerRadius, 0, Math.PI * 2, true);
+                    ctx.fillStyle = bgGrad;
+                    ctx.fill();
+                }
 
                 const link1 = document.createElement('a');
                 link1.download = 'ballmarker-designforstag.png';
