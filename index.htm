@@ -28,8 +28,7 @@
             box-sizing: border-box;
         }
 
-        /* Den röda streckade cirkeln som visar no-go zonen */
-        #no-go-zone {
+        #margin-line {
             position: absolute;
             top: 0;
             left: 0;
@@ -40,7 +39,6 @@
             pointer-events: none; 
             box-sizing: border-box;
             z-index: 10; 
-            transition: all 0.1s ease;
         }
 
         .corten { background: linear-gradient(135deg, #a0522d, #8b4513) !important; }
@@ -94,7 +92,7 @@
         <div id="marker">
             <img id="uploaded-image" src="" alt="" style="display:none;">
         </div>
-        <div id="no-go-zone"></div>
+        <div id="margin-line"></div>
     </div>
 
     <div class="controls">
@@ -126,7 +124,7 @@
             </div>
 
             <div class="control-group">
-                <label>Marginal från kant (No-go zon): <span id="marginValue">5</span>%</label>
+                <label>Marginal från kant: <span id="marginValue">5</span>%</label>
                 <input type="range" id="marginRange" min="0" max="25" value="5" oninput="updateMargin(this.value)">
                 <small style="color: #666;">Visas som röd streckad linje på markören.</small>
             </div>
@@ -169,7 +167,7 @@
 
     <script>
         const img = document.getElementById('uploaded-image');
-        const noGoZone = document.getElementById('no-go-zone');
+        const marginLine = document.getElementById('margin-line');
         const marker = document.getElementById('marker');
         let savedImageData = null;
         let originalFile = null; 
@@ -178,7 +176,6 @@
         let xOffset = 0;
         let yOffset = 0;
 
-        // Initiera no-go zonen korrekt vid start
         window.onload = function() {
             updateMargin(5);
         };
@@ -228,11 +225,11 @@
             const markerSize = marker.offsetWidth;
             const marginPx = (marginPercent / 100) * (markerSize / 2);
             
-            noGoZone.style.top = marginPx + 'px';
-            noGoZone.style.left = marginPx + 'px';
-            noGoZone.style.width = (markerSize - (2 * marginPx)) + 'px';
-            noGoZone.style.height = (markerSize - (2 * marginPx)) + 'px';
-            noGoZone.style.borderRadius = '50%';
+            marginLine.style.top = marginPx + 'px';
+            marginLine.style.left = marginPx + 'px';
+            marginLine.style.width = (markerSize - (2 * marginPx)) + 'px';
+            marginLine.style.height = (markerSize - (2 * marginPx)) + 'px';
+            marginLine.style.borderRadius = '50%';
         }
 
         function updateTransform() {
@@ -295,7 +292,6 @@
             const marginal = document.getElementById('marginRange').value + '%';
             const meddelande = document.getElementById('meddelande').value;
 
-            // 1. Skapa och ladda ner designförslaget
             const canvas = document.createElement('canvas');
             const size = 600; 
             canvas.width = size;
@@ -340,13 +336,11 @@
                 ctx.clip();
                 ctx.drawImage(tempCanvas, 0, 0);
 
-                // Ladda ner designförslaget
                 const link1 = document.createElement('a');
                 link1.download = 'ballmarker-designforstag.png';
                 link1.href = canvas.toDataURL('image/png');
                 link1.click();
 
-                // Ladda ner originalbilden efter en kort stund
                 if (originalFile) {
                     setTimeout(() => {
                         const link2 = document.createElement('a');
@@ -356,7 +350,6 @@
                     }, 400);
                 }
 
-                // Visa påminnelse och öppna mailet
                 setTimeout(() => {
                     alert("Tack! Ditt designförslag och din originalbild har nu laddats ner till din enhet.\n\nE-postprogrammet öppnas nu. Kom ihåg att BIFOGA de nedladdade bilderna i mailet innan du skickar det!");
 
@@ -369,7 +362,7 @@
                         "E-post: " + epost + "\n" +
                         "Material: " + material + "\n" +
                         "Skalning: " + skalning + "\n" +
-                        "Marginal (No-go): " + marginal + "\n\n" +
+                        "Marginal från kant: " + marginal + "\n\n" +
                         "Meddelande:\n" + meddelande + "\n\n" +
                         "OBS: Jag har bifogat bilderna ('ballmarker-designforstag.png' och min originalbild) till detta meddelande."
                     );
