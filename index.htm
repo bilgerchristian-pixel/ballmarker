@@ -73,7 +73,7 @@
             z-index: 5; 
         }
 
-        /* Fritt flyttbar text på skärmen */
+        /* Fritt flyttbar text i mitten */
         #draggable-text {
             position: absolute;
             top: 50%;
@@ -117,7 +117,7 @@
         .contact-box a { color: #0078d4; text-decoration: none; font-weight: bold; }
 
         select, input[type="file"], input[type="range"], input[type="text"], input[type="email"], textarea { 
-            width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;
+            width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; margin-bottom: 5px;
         }
         textarea { resize: vertical; height: 80px; }
         footer { margin-top: 30px; font-size: 12px; color: #777; line-height: 1.5; }
@@ -126,7 +126,7 @@
 <body>
 
     <h1>CBT AB - Designa din Ballmarker</h1>
-    <p>Välj material, lägg till text, ladda upp logga, anpassa och skicka din förfrågan!</p>
+    <p>Välj material, texter, typsnitt, ladda upp logga, anpassa och skicka din förfrågan!</p>
 
     <div id="marker-container">
         <div id="marker">
@@ -135,7 +135,7 @@
             
             <svg id="edge-text-svg" viewBox="0 0 200 200">
                 <path id="textPathTop" d="M 25,100 A 75,75 0 1,1 175,100" fill="none" />
-                <text font-size="14" font-weight="bold" fill="#111" text-anchor="middle">
+                <text font-weight="bold" fill="#111" text-anchor="middle">
                     <textPath href="#textPathTop" startOffset="50%" id="edgeTextValue"></textPath>
                 </text>
             </svg>
@@ -163,20 +163,52 @@
                 </select>
             </div>
 
-            <!-- NYTT: Tydligt textfält direkt i formuläret -->
+            <!-- TEXTINSTÄLLNINGAR MED TYPSNITT -->
             <div class="control-group" style="background: #fdf8e2; padding: 12px; border-radius: 6px; border: 1px solid #f9e79f;">
-                <label style="color: #b7950b;">✨ Infoga egen text (valfritt):</label>
-                <input type="text" id="customTextInput" placeholder="T.ex. KLUBBMÄSTARE 2026" oninput="updateTextContent()" style="margin-bottom: 8px; background: white;">
+                <label style="color: #b7950b; margin-bottom: 8px;">✨ Textinställningar:</label>
                 
-                <label style="font-size: 13px; font-weight: normal; margin-bottom: 3px;">Textplacering:</label>
-                <select id="textPlacementMode" onchange="updateTextContent()" style="background: white;">
-                    <option value="free">Fritt flyttbar (Dra med musen/fingret)</option>
-                    <option value="edge">Runt kanten (Böjd text)</option>
-                </select>
+                <!-- KANTTEXT -->
+                <div style="margin-bottom: 12px; border-bottom: 1px dashed #f5cba7; padding-bottom: 10px;">
+                    <label style="font-size: 13px; font-weight: normal;">Text runt kanten (böjd):</label>
+                    <input type="text" id="edgeTextInput" placeholder="T.ex. KLUBBMÄSTARE 2026" oninput="updateTextContent()" style="background: white;">
+                    
+                    <div style="display: flex; gap: 8px; margin-top: 4px;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 11px; font-weight: normal;">Typsnitt:</label>
+                            <select id="edgeFontSelect" onchange="updateTextStyles()" style="background: white; font-size: 13px;">
+                                <option value="sans-serif">Modern (Standard)</option>
+                                <option value="Georgia, serif">Klassisk (Serif)</option>
+                                <option value="'Brush Script MT', cursive">Handstil (Script)</option>
+                                <option value="Impact, sans-serif">Kraftig (Stencil/Block)</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 11px; font-weight: normal;">Storlek: <span id="edgeTextSizeVal">14</span>px</label>
+                            <input type="range" id="edgeTextSizeRange" min="10" max="24" value="14" oninput="updateTextStyles()">
+                        </div>
+                    </div>
+                </div>
 
-                <div style="margin-top: 8px;">
-                    <label style="font-size: 13px; font-weight: normal; margin-bottom: 3px;">Textstorlek: <span id="textSizeVal">16</span>px</label>
-                    <input type="range" id="textSizeRange" min="10" max="32" value="16" oninput="updateTextSize(this.value)">
+                <!-- MITTEN-TEXT -->
+                <div>
+                    <label style="font-size: 13px; font-weight: normal;">Text i mitten (fritt flyttbar):</label>
+                    <input type="text" id="freeTextInput" placeholder="T.ex. HOLE IN ONE" oninput="updateTextContent()" style="background: white;">
+                    
+                    <div style="display: flex; gap: 8px; margin-top: 4px;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 11px; font-weight: normal;">Typsnitt:</label>
+                            <select id="freeFontSelect" onchange="updateTextStyles()" style="background: white; font-size: 13px;">
+                                <option value="sans-serif">Modern (Standard)</option>
+                                <option value="Georgia, serif">Klassisk (Serif)</option>
+                                <option value="'Brush Script MT', cursive">Handstil (Script)</option>
+                                <option value="Impact, sans-serif">Kraftig (Stencil/Block)</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 11px; font-weight: normal;">Storlek: <span id="freeTextSizeVal">16</span>px</label>
+                            <input type="range" id="freeTextSizeRange" min="10" max="32" value="16" oninput="updateTextStyles()">
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -254,6 +286,7 @@
 
         window.onload = function() {
             updateMargin(5);
+            updateTextStyles();
         };
 
         function changeMaterial() {
@@ -300,29 +333,37 @@
             img.style.transform = `translate(-50%, -50%) translate3d(${imgXOffset}px, ${imgYOffset}px, 0)`;
         }
 
-        function updateTextSize(val) {
-            document.getElementById('textSizeVal').innerText = val;
-            draggableText.style.fontSize = val + 'px';
-            edgeTextSvg.querySelector('text').setAttribute('font-size', val);
+        function updateTextStyles() {
+            const freeSize = document.getElementById('freeTextSizeRange').value;
+            const edgeSize = document.getElementById('edgeTextSizeRange').value;
+            const freeFont = document.getElementById('freeFontSelect').value;
+            const edgeFont = document.getElementById('edgeFontSelect').value;
+
+            document.getElementById('freeTextSizeVal').innerText = freeSize;
+            document.getElementById('edgeTextSizeVal').innerText = edgeSize;
+
+            draggableText.style.fontSize = freeSize + 'px';
+            draggableText.style.fontFamily = freeFont;
+
+            edgeTextSvg.querySelector('text').setAttribute('font-size', edgeSize);
+            edgeTextSvg.querySelector('text').style.fontFamily = edgeFont;
         }
 
         function updateTextContent() {
-            const textVal = document.getElementById('customTextInput').value;
-            const mode = document.getElementById('textPlacementMode').value;
+            const edgeVal = document.getElementById('edgeTextInput').value;
+            const freeVal = document.getElementById('freeTextInput').value;
 
-            if (!textVal.trim()) {
-                draggableText.style.display = 'none';
+            if (edgeVal.trim()) {
+                edgeTextValue.textContent = edgeVal;
+                edgeTextSvg.style.display = 'block';
+            } else {
                 edgeTextSvg.style.display = 'none';
-                return;
             }
 
-            if (mode === 'free') {
-                draggableText.innerText = textVal;
+            if (freeVal.trim()) {
+                draggableText.innerText = freeVal;
                 draggableText.style.display = 'block';
-                edgeTextSvg.style.display = 'none';
             } else {
-                edgeTextValue.textContent = textVal;
-                edgeTextSvg.style.display = 'block';
                 draggableText.style.display = 'none';
             }
         }
@@ -409,9 +450,13 @@
             const skalning = document.getElementById('scaleRange').value + '%';
             const marginal = document.getElementById('marginRange').value + '%';
             const meddelande = document.getElementById('meddelande').value;
-            const customText = document.getElementById('customTextInput').value;
-            const textMode = document.getElementById('textPlacementMode').value;
-            const textSize = parseInt(document.getElementById('textSizeRange').value);
+            
+            const edgeText = document.getElementById('edgeTextInput').value;
+            const freeText = document.getElementById('freeTextInput').value;
+            const edgeSize = parseInt(document.getElementById('edgeTextSizeRange').value);
+            const freeSize = parseInt(document.getElementById('freeTextSizeRange').value);
+            const edgeFont = document.getElementById('edgeFontSelect').value;
+            const freeFont = document.getElementById('freeFontSelect').value;
 
             const canvas = document.createElement('canvas');
             const size = 600; 
@@ -442,15 +487,16 @@
             const scaleFactor = size / markerWidth; 
 
             function finishCanvasGeneration() {
-                if (customText.trim() && textMode === 'edge') {
+                // 1. Kanttext med typsnitt
+                if (edgeText.trim()) {
                     ctx.save();
-                    ctx.font = `bold ${textSize * scaleFactor}px sans-serif`;
+                    ctx.font = `bold ${edgeSize * scaleFactor}px ${edgeFont}`;
                     ctx.fillStyle = '#111';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
 
                     const radius = (size / 2) - (15 * scaleFactor);
-                    const characters = customText.split('');
+                    const characters = edgeText.split('');
                     const angleStep = Math.PI / (characters.length + 1);
 
                     ctx.translate(size / 2, size / 2);
@@ -467,18 +513,20 @@
                     ctx.restore();
                 }
 
-                if (customText.trim() && textMode === 'free') {
+                // 2. Mitten-text med typsnitt
+                if (freeText.trim()) {
                     ctx.save();
-                    ctx.font = `bold ${textSize * scaleFactor}px sans-serif`;
+                    ctx.font = `bold ${freeSize * scaleFactor}px ${freeFont}`;
                     ctx.fillStyle = '#111';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     const textCanvasX = (size / 2) + (textXOffset * scaleFactor);
                     const textCanvasY = (size / 2) + (textYOffset * scaleFactor);
-                    ctx.fillText(customText, textCanvasX, textCanvasY);
+                    ctx.fillText(freeText, textCanvasX, textCanvasY);
                     ctx.restore();
                 }
 
+                // 3. Marginal-mask
                 const marginPercent = parseInt(document.getElementById('marginRange').value);
                 if (marginPercent > 0) {
                     const marginPxScreen = (marginPercent / 100) * (markerWidth / 2);
@@ -519,7 +567,8 @@
                         "Material: " + material + "\n" +
                         "Skalning: " + skalning + "\n" +
                         "Marginal från kant: " + marginal + "\n" +
-                        "Infogad text: " + (customText || "Ingen") + "\n\n" +
+                        "Kanttext: " + (edgeText || "Ingen") + "\n" +
+                        "Mitten-text: " + (freeText || "Ingen") + "\n\n" +
                         "Meddelande:\n" + meddelande + "\n\n" +
                         "OBS: Jag har bifogat bilderna till detta meddelande."
                     );
