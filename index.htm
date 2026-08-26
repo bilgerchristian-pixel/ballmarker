@@ -265,7 +265,8 @@
     </div>
 
     <footer>
-        &copy; 2026 CBT AB. Alla rättigheter reserverade.
+        &copy; 2026 CBT AB. Alla rättigheter reserverade. <br>
+        <span style="font-size: 11px; color: #aaa;">Version 1.4</span>
     </footer>
 
     <script>
@@ -502,7 +503,7 @@
 
             function finishCanvasGeneration() {
                 const proceedWithTexts = () => {
-                    // 1. RITA UT KANTTEXT (Rätt roterad uppifrån, följer cirkelns båge)
+                    // 1. RITA UT KANTTEXT (Korrigerad radie och vinkelberäkning för 600px canvas)
                     if (edgeText.trim()) {
                         ctx.save();
                         const scaledFontSize = edgeSize * scaleFactor;
@@ -511,21 +512,19 @@
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
 
-                        const radius = (size / 2) - (22 * scaleFactor); // Avstånd från kanten
+                        const radius = (size / 2) - (28 * scaleFactor); // Korrekt avstånd från kanten
                         const characters = edgeText.split('');
                         
-                        // Beräkna ungefärlig vinkel per tecken baserat på typsnittsstorlek
-                        const angleStep = (scaledFontSize * 0.65) / radius; 
+                        const angleStep = (scaledFontSize * 0.58) / radius; 
                         const totalArcAngle = characters.length * angleStep;
 
                         ctx.translate(size / 2, size / 2);
-                        // Börja rotera från mitten av texten så den hamnar symmetriskt i toppen
                         ctx.rotate(-totalArcAngle / 2 + angleStep / 2);
 
                         characters.forEach((char) => {
                             ctx.save();
                             ctx.translate(0, -radius);
-                            ctx.rotate(Math.PI); // Vänd tecknen rätt så de läses utifrån och in
+                            ctx.rotate(Math.PI); 
                             ctx.fillText(char, 0, 0);
                             ctx.restore();
                             ctx.rotate(angleStep);
