@@ -501,9 +501,8 @@
             const scaleFactor = size / markerWidth; 
 
             function finishCanvasGeneration() {
-                // 1. RITA UT BILDEN (om den finns)
                 const proceedWithTexts = () => {
-                    // 2. RITA UT KANTTEXT (om den finns)
+                    // 1. RITA UT KANTTEXT (Rätt roterad uppifrån)
                     if (edgeText.trim()) {
                         ctx.save();
                         ctx.font = `bold ${edgeSize * scaleFactor}px ${edgeFontVal}`;
@@ -514,23 +513,24 @@
                         const marginPercent = parseInt(document.getElementById('marginRange').value);
                         const radius = (size / 2) - ((15 + (marginPercent * 0.4)) * scaleFactor);
                         const characters = edgeText.split('');
-                        const angleStep = Math.PI / (characters.length + 1);
+                        const angleStep = 0.085 * (14 / edgeSize); // Anpassad vinkelstege efter teckenstorlek
 
                         ctx.translate(size / 2, size / 2);
-                        ctx.rotate(-Math.PI / 2);
+                        // Börja på toppen och centrera texten
+                        const totalArcAngle = characters.length * angleStep;
+                        ctx.rotate(-totalArcAngle / 2);
 
-                        characters.forEach((char, i) => {
+                        characters.forEach((char) => {
                             ctx.save();
-                            const angle = (i - characters.length / 2 + 0.5) * angleStep * 0.9;
-                            ctx.rotate(angle);
                             ctx.translate(0, -radius);
                             ctx.fillText(char, 0, 0);
                             ctx.restore();
+                            ctx.rotate(angleStep);
                         });
                         ctx.restore();
                     }
 
-                    // 3. RITA UT MITTEN-TEXT (om den finns)
+                    // 2. RITA UT MITTEN-TEXT
                     if (freeText.trim()) {
                         ctx.save();
                         ctx.font = `bold ${freeSize * scaleFactor}px ${freeFontVal}`;
@@ -543,7 +543,7 @@
                         ctx.restore();
                     }
 
-                    // 4. RITA UT MARGINAL-MASK (döljer utanför marginal)
+                    // 3. RITA UT MARGINAL-MASK (döljer utanför marginal)
                     const marginPercent = parseInt(document.getElementById('marginRange').value);
                     if (marginPercent > 0) {
                         const marginPxScreen = (marginPercent / 100) * (markerWidth / 2);
