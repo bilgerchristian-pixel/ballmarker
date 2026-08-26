@@ -228,7 +228,6 @@
 
             <div class="control-group">
                 <label>Marginal från kant: <span id="marginValue">5</span>%</label>
-                <!-- Ändrad till max 35 här nedan -->
                 <input type="range" id="marginRange" min="0" max="35" value="5" oninput="updateMargin(this.value)">
                 <small style="color: #666;">Döljer logga/element utanför den röda streckade linjen (nu upp till 35%).</small>
             </div>
@@ -444,6 +443,14 @@
             }
         }
 
+        // Hjälpfunktion för läsbara namn på typsnitt i mailet
+        function getReadableFontName(fontValue) {
+            if (fontValue.includes('Great Vibes')) return 'Elegant Handstil (Script)';
+            if (fontValue.includes('Georgia')) return 'Klassisk (Serif)';
+            if (fontValue.includes('Impact')) return 'Kraftig (Stencil/Block)';
+            return 'Modern (Standard)';
+        }
+
         function handleOrder(event) {
             event.preventDefault();
 
@@ -458,9 +465,13 @@
             const freeText = document.getElementById('freeTextInput').value;
             const edgeSize = parseInt(document.getElementById('edgeTextSizeRange').value);
             const freeSize = parseInt(document.getElementById('freeTextSizeRange').value);
-            const edgeFont = document.getElementById('edgeFontSelect').value;
-            const freeFont = document.getElementById('freeFontSelect').value;
+            const edgeFontVal = document.getElementById('edgeFontSelect').value;
+            const freeFontVal = document.getElementById('freeFontSelect').value;
 
+            const edgeFontName = getReadableFontName(edgeFontVal);
+            const freeFontName = getReadableFontName(freeFontVal);
+
+            // Canvas för bildexport
             const canvas = document.createElement('canvas');
             const size = 600; 
             canvas.width = size;
@@ -490,118 +501,127 @@
             const scaleFactor = size / markerWidth; 
 
             function finishCanvasGeneration() {
-                // 1. Kanttext med typsnitt
-                if (edgeText.trim()) {
-                    ctx.save();
-                    ctx.font = `bold ${edgeSize * scaleFactor}px ${edgeFont}`;
-                    ctx.fillStyle = '#111';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-
-                    const marginPercent = parseInt(document.getElementById('marginRange').value);
-                    const radius = (size / 2) - ((15 + (marginPercent * 0.4)) * scaleFactor);
-                    const characters = edgeText.split('');
-                    const angleStep = Math.PI / (characters.length + 1);
-
-                    ctx.translate(size / 2, size / 2);
-                    ctx.rotate(-Math.PI / 2);
-
-                    characters.forEach((char, i) => {
+                // 1. RITA UT BILDEN (om den finns)
+                const proceedWithTexts = () => {
+                    // 2. RITA UT KANTTEXT (om den finns)
+                    if (edgeText.trim()) {
                         ctx.save();
-                        const angle = (i - characters.length / 2 + 0.5) * angleStep * 0.9;
-                        ctx.rotate(angle);
-                        ctx.translate(0, -radius);
-                        ctx.fillText(char, 0, 0);
+                        ctx.font = `bold ${edgeSize * scaleFactor}px ${edgeFontVal}`;
+                        ctx.fillStyle = '#111';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+
+                        const marginPercent = parseInt(document.getElementById('marginRange').value);
+                        const radius = (size / 2) - ((15 + (marginPercent * 0.4)) * scaleFactor);
+                        const characters = edgeText.split('');
+                        const angleStep = Math.PI / (characters.length + 1);
+
+                        ctx.translate(size / 2, size / 2);
+                        ctx.rotate(-Math.PI / 2);
+
+                        characters.forEach((char, i) => {
+                            ctx.save();
+                            const angle = (i - characters.length / 2 + 0.5) * angleStep * 0.9;
+                            ctx.rotate(angle);
+                            ctx.translate(0, -radius);
+                            ctx.fillText(char, 0, 0);
+                            ctx.restore();
+                        });
                         ctx.restore();
-                    });
-                    ctx.restore();
-                }
+                    }
 
-                // 2. Mitten-text med typsnitt
-                if (freeText.trim()) {
-                    ctx.save();
-                    ctx.font = `bold ${freeSize * scaleFactor}px ${freeFont}`;
-                    ctx.fillStyle = '#111';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    const textCanvasX = (size / 2) + (textXOffset * scaleFactor);
-                    const textCanvasY = (size / 2) + (textYOffset * scaleFactor);
-                    ctx.fillText(freeText, textCanvasX, textCanvasY);
-                    ctx.restore();
-                }
+                    // 3. RITA UT MITTEN-TEXT (om den finns)
+                    if (freeText.trim()) {
+                        ctx.save();
+                        ctx.font = `bold ${freeSize * scaleFactor}px ${freeFontVal}`;
+                        ctx.fillStyle = '#111';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        const textCanvasX = (size / 2) + (textXOffset * scaleFactor);
+                        const textCanvasY = (size / 2) + (textYOffset * scaleFactor);
+                        ctx.fillText(freeText, textCanvasX, textCanvasY);
+                        ctx.restore();
+                    }
 
-                // 3. Marginal-mask
-                const marginPercent = parseInt(document.getElementById('marginRange').value);
-                if (marginPercent > 0) {
-                    const marginPxScreen = (marginPercent / 100) * (markerWidth / 2);
-                    const marginPxCanvas = marginPxScreen * scaleFactor;
-                    const innerRadius = (size / 2) - marginPxCanvas;
+                    // 4. RITA UT MARGINAL-MASK (döljer utanför marginal)
+                    const marginPercent = parseInt(document.getElementById('marginRange').value);
+                    if (marginPercent > 0) {
+                        const marginPxScreen = (marginPercent / 100) * (markerWidth / 2);
+                        const marginPxCanvas = marginPxScreen * scaleFactor;
+                        const innerRadius = (size / 2) - marginPxCanvas;
 
-                    ctx.beginPath();
-                    ctx.arc(size / 2, size / 2, size + 100, 0, Math.PI * 2, false);
-                    ctx.arc(size / 2, size / 2, innerRadius, 0, Math.PI * 2, true);
-                    ctx.fillStyle = bgGrad;
-                    ctx.fill();
-                }
+                        ctx.beginPath();
+                        ctx.arc(size / 2, size / 2, size + 100, 0, Math.PI * 2, false);
+                        ctx.arc(size / 2, size / 2, innerRadius, 0, Math.PI * 2, true);
+                        ctx.fillStyle = bgGrad;
+                        ctx.fill();
+                    }
 
-                const link1 = document.createElement('a');
-                link1.download = 'ballmarker-designforstag.png';
-                link1.href = canvas.toDataURL('image/png');
-                link1.click();
+                    // Ladda ner canvas-bilden
+                    const link1 = document.createElement('a');
+                    link1.download = 'ballmarker-designforstag.png';
+                    link1.href = canvas.toDataURL('image/png');
+                    link1.click();
 
-                if (originalFile) {
+                    // Ladda ner originalbilden om sådan finns
+                    if (originalFile) {
+                        setTimeout(() => {
+                            const link2 = document.createElement('a');
+                            link2.href = URL.createObjectURL(originalFile);
+                            link2.download = originalFile.name;
+                            link2.click();
+                        }, 400);
+                    }
+
+                    // Öppna e-postprogrammet med typsnittsinfo i mailet
                     setTimeout(() => {
-                        const link2 = document.createElement('a');
-                        link2.href = URL.createObjectURL(originalFile);
-                        link2.download = originalFile.name;
-                        link2.click();
-                    }, 400);
-                }
+                        alert("Tack! Ditt designförslag och din originalbild har nu laddats ner till din enhet.\n\nE-postprogrammet öppnas nu. Kom ihåg att BIFOGA de nedladdade bilderna i mailet innan du skickar det!");
 
-                setTimeout(() => {
-                    alert("Tack! Ditt designförslag och din originalbild har nu laddats ner till din enhet.\n\nE-postprogrammet öppnas nu. Kom ihåg att BIFOGA de nedladdade bilderna i mailet innan du skickar det!");
+                        const emailSubject = encodeURIComponent("Förfrågan Ballmarker - " + namn);
+                        const emailBody = encodeURIComponent(
+                            "Hej CBT AB!\n\n" +
+                            "Jag skickar en förfrågan gällande tillverkning av ballmarkers.\n\n" +
+                            "--- KUNDUPPGIFTER ---\n" +
+                            "Namn: " + namn + "\n" +
+                            "E-post: " + epost + "\n" +
+                            "Material: " + material + "\n" +
+                            "Skalning: " + skalning + "\n" +
+                            "Marginal från kant: " + marginal + "\n\n" +
+                            "--- TEXT & TYPSNITT ---\n" +
+                            "Kanttext: " + (edgeText ? `"${edgeText}" (Typsnitt: ${edgeFontName})` : "Ingen") + "\n" +
+                            "Mitten-text: " + (freeText ? `"${freeText}" (Typsnitt: ${freeFontName})` : "Ingen") + "\n\n" +
+                            "Meddelande:\n" + meddelande + "\n\n" +
+                            "OBS: Jag har bifogat bilderna till detta meddelande."
+                        );
 
-                    const emailSubject = encodeURIComponent("Förfrågan Ballmarker - " + namn);
-                    const emailBody = encodeURIComponent(
-                        "Hej CBT AB!\n\n" +
-                        "Jag skickar en förfrågan gällande tillverkning av ballmarkers.\n\n" +
-                        "--- KUNDUPPGIFTER ---\n" +
-                        "Namn: " + namn + "\n" +
-                        "E-post: " + epost + "\n" +
-                        "Material: " + material + "\n" +
-                        "Skalning: " + skalning + "\n" +
-                        "Marginal från kant: " + marginal + "\n" +
-                        "Kanttext: " + (edgeText || "Ingen") + "\n" +
-                        "Mitten-text: " + (freeText || "Ingen") + "\n\n" +
-                        "Meddelande:\n" + meddelande + "\n\n" +
-                        "OBS: Jag har bifogat bilderna till detta meddelande."
-                    );
-
-                    window.location.href = `mailto:bilger.christian@gmail.com?subject=${emailSubject}&body=${emailBody}`;
-                }, 1000);
-            }
-
-            if (savedImageData && img.style.display !== 'none') {
-                const exportImg = new Image();
-                exportImg.onload = function() {
-                    const imgDrawWidth = img.offsetWidth * scaleFactor;
-                    const imgDrawHeight = (exportImg.height / exportImg.width) * imgDrawWidth;
-                    const imgCenterX = (size / 2) + (imgXOffset * scaleFactor);
-                    const imgCenterY = (size / 2) + (imgYOffset * scaleFactor);
-
-                    ctx.save();
-                    ctx.filter = 'grayscale(100%) contrast(200%)';
-                    ctx.globalCompositeOperation = 'multiply';
-                    ctx.globalAlpha = 0.85;
-                    ctx.drawImage(exportImg, imgCenterX - (imgDrawWidth / 2), imgCenterY - (imgDrawHeight / 2), imgDrawWidth, imgDrawHeight);
-                    ctx.restore();
-
-                    finishCanvasGeneration();
+                        window.location.href = `mailto:bilger.christian@gmail.com?subject=${emailSubject}&body=${emailBody}`;
+                    }, 1000);
                 };
-                exportImg.src = savedImageData;
-            } else {
-                finishCanvasGeneration();
+
+                if (savedImageData && img.style.display !== 'none') {
+                    const exportImg = new Image();
+                    exportImg.onload = function() {
+                        const imgDrawWidth = img.offsetWidth * scaleFactor;
+                        const imgDrawHeight = (exportImg.height / exportImg.width) * imgDrawWidth;
+                        const imgCenterX = (size / 2) + (imgXOffset * scaleFactor);
+                        const imgCenterY = (size / 2) + (imgYOffset * scaleFactor);
+
+                        ctx.save();
+                        ctx.filter = 'grayscale(100%) contrast(200%)';
+                        ctx.globalCompositeOperation = 'multiply';
+                        ctx.globalAlpha = 0.85;
+                        ctx.drawImage(exportImg, imgCenterX - (imgDrawWidth / 2), imgCenterY - (imgDrawHeight / 2), imgDrawWidth, imgDrawHeight);
+                        ctx.restore();
+
+                        proceedWithTexts();
+                    };
+                    exportImg.src = savedImageData;
+                } else {
+                    proceedWithTexts();
+                }
             }
+
+            finishCanvasGeneration();
         }
     </script>
 
