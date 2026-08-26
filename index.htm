@@ -148,9 +148,9 @@
 
         .btn { background: #28a745; color: white; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 10px; }
         .btn:hover { background: #218838; }
+        .btn:disabled { background: #6c757d; cursor: not-allowed; }
 
-        .warning-box { background: #fff3cd; border-left: 4px solid #ff9800; padding: 10px; font-size: 12px; color: #856404; border-radius: 4px; margin-bottom: 12px; line-height: 1.4; }
-        .warning-box strong { color: #d32f2f; }
+        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; font-size: 14px; color: #155724; border-radius: 4px; margin-top: 10px; display: none; line-height: 1.4; }
 
         /* Mobilanpassningar */
         @media (max-width: 600px) {
@@ -294,10 +294,6 @@
 
             <!-- FLIK 3: KONTAKT & SKICKA -->
             <div id="tab-contact" class="tab-content">
-                <div class="warning-box">
-                    <strong>OBS:</strong> När du trycker på knappen nedan sparas dina bilder ner på mobilen och mailen öppnas. <strong>Kom ihåg att bifoga bilderna i mailet!</strong>
-                </div>
-
                 <div class="control-group">
                     <label>Ditt Namn / Företag:</label>
                     <input type="text" id="namn" required placeholder="För- och efternamn">
@@ -313,7 +309,12 @@
                     <textarea id="meddelande" placeholder="T.ex. Önskar förfrågan på 50 st..."></textarea>
                 </div>
 
-                <button type="submit" class="btn">Skapa förfrågan & öppna e-post</button>
+                <button type="submit" id="submitBtn" class="btn">Skicka förfrågan</button>
+                
+                <div id="successMsg" class="success-box">
+                    <strong>Tack för din förfrågan!</strong><br>
+                    Vi har tagit emot din design och återkommer till dig så snart som möjligt.
+                </div>
             </div>
 
         </form>
@@ -346,7 +347,6 @@
             
             document.getElementById('tab-' + tabId).classList.add('active');
             
-            // Hitta rätt knapp att markera som aktiv
             const btns = document.querySelectorAll('.tab-btn');
             if (tabId === 'design') btns[0].classList.add('active');
             if (tabId === 'text') btns[1].classList.add('active');
@@ -502,18 +502,25 @@
             }
         }
 
+        // FORMSUBMIT INTEGRATION (SÖMLÖS SÄNDNING)
         function handleOrder(event) {
             event.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+            const successMsg = document.getElementById('successMsg');
+            
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Skickar din förfrågan...";
 
             const namn = document.getElementById('namn').value;
             const epost = document.getElementById('epost').value;
             const material = document.getElementById('materialSelect').value;
-            const meddelande = document.getElementById('meddelande').value || '';
+            const meddelande = document.getElementById('meddelande').value || 'Inget meddelande';
             
-            const edgeText = document.getElementById('edgeTextInput').value;
-            const freeText = document.getElementById('freeTextInput').value;
+            const edgeText = document.getElementById('edgeTextInput').value || 'Ingen';
+            const freeText = document.getElementById('freeTextInput').value || 'Ingen';
 
-            // Canvas Export
+            // Canvas Rendering
             const canvas = document.createElement('canvas');
             const size = 600; 
             canvas.width = size; canvas.height = size;
@@ -534,7 +541,7 @@
             const markerWidth = marker.offsetWidth || 150;
             const scaleFactor = size / markerWidth;
 
-            // Bild-ritning (Nu med riktig gråskala i Canvas för nedladdningen)
+            // Bild i gråskala
             if (img.src && img.style.display !== 'none' && img.complete && img.naturalWidth !== 0) {
                 ctx.save();
                 const userScale = parseInt(document.getElementById('scaleRange').value) / 100;
@@ -562,7 +569,7 @@
             }
 
             // Kanttext
-            if (edgeText.trim()) {
+            if (edgeText !== 'Ingen') {
                 ctx.save();
                 ctx.font = `bold ${parseInt(document.getElementById('edgeTextSizeRange').value) * scaleFactor}px ${document.getElementById('edgeFontSelect').value}`;
                 ctx.fillStyle = getActualTextColor(document.getElementById('edgePaintSelect').value);
@@ -589,7 +596,7 @@
             }
 
             // Mitten-text
-            if (freeText.trim()) {
+            if (freeText !== 'Ingen') {
                 ctx.save();
                 ctx.font = `bold ${parseInt(document.getElementById('freeTextSizeRange').value) * scaleFactor}px ${document.getElementById('freeFontSelect').value}`;
                 ctx.fillStyle = getActualTextColor(document.getElementById('freePaintSelect').value);
@@ -598,35 +605,44 @@
                 ctx.restore();
             }
 
-            // Lösning Android & Gråskala: Skapa en Blob istället för Base64-sträng
+            // Konvertera till fil och skicka via FormSubmit AJAX
             canvas.toBlob(function(blob) {
-                const url = URL.createObjectURL(blob);
-                const link1 = document.createElement('a');
-                link1.download = 'ballmarker-designforstag.png';
-                link1.href = url;
-                link1.click();
+                const formData = new FormData();
+                formData.append("Namn", namn);
+                formData.append("E-post", epost);
+                formData.append("Material", material);
+                formData.append("Kanttext", edgeText);
+                formData.append("Mittentext", freeText);
+                formData.append("Meddelande", meddelande);
+                formData.append("_subject", "Ny Förfrågan Ballmarker: " + namn);
+                formData.append("_template", "table");
+                formData.append("_captcha", "false"); // Inaktivera captcha för renare flöde
 
-                // Ladda ner originalfilen
+                // Bifoga den färdiga designskissen
+                formData.append("Designforslag", blob, "ballmarker-design.png");
+
+                // Bifoga originalbilden om sådan finns
                 if (originalFile) {
-                    setTimeout(() => {
-                        const link2 = document.createElement('a');
-                        link2.href = URL.createObjectURL(originalFile);
-                        link2.download = originalFile.name;
-                        link2.click();
-                    }, 400);
+                    formData.append("Originalfil", originalFile, originalFile.name);
                 }
 
-                // Öppna mailen
-                setTimeout(() => {
-                    alert("Bilderna har sparats! Öppnar nu ditt e-postprogram...");
-                    const emailSubject = encodeURIComponent("Förfrågan Ballmarker - " + namn);
-                    const emailBody = encodeURIComponent("Hej CBT AB!\n\nJag vill beställa ballmarkers.\nNamn: " + namn + "\nE-post: " + epost + "\nMaterial: " + material + "\nMeddelande: " + meddelande);
-                    window.location.href = `mailto:bilger.christian@gmail.com?subject=${emailSubject}&body=${emailBody}`;
-                    
-                    // Städa upp URL:en från internminnet
-                    setTimeout(() => URL.revokeObjectURL(url), 1000);
-                }, 800);
-                
+                // Anrop mot FormSubmit
+                fetch("https://formsubmit.co/ajax/bilger.christian@gmail.com", {
+                    method: "POST",
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    submitBtn.style.display = 'none';
+                    successMsg.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error("Fel vid sändning:", error);
+                    alert("Ett fel uppstod när förfrågan skulle skickas. Kontrollera din anslutning och försök igen.");
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = "Skicka förfrågan";
+                });
+
             }, 'image/png');
         }
     </script>
