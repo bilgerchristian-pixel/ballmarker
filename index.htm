@@ -502,27 +502,30 @@
 
             function finishCanvasGeneration() {
                 const proceedWithTexts = () => {
-                    // 1. RITA UT KANTTEXT (Rätt roterad uppifrån)
+                    // 1. RITA UT KANTTEXT (Rätt roterad uppifrån, följer cirkelns båge)
                     if (edgeText.trim()) {
                         ctx.save();
-                        ctx.font = `bold ${edgeSize * scaleFactor}px ${edgeFontVal}`;
+                        const scaledFontSize = edgeSize * scaleFactor;
+                        ctx.font = `bold ${scaledFontSize}px ${edgeFontVal}`;
                         ctx.fillStyle = '#111';
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
 
-                        const marginPercent = parseInt(document.getElementById('marginRange').value);
-                        const radius = (size / 2) - ((15 + (marginPercent * 0.4)) * scaleFactor);
+                        const radius = (size / 2) - (22 * scaleFactor); // Avstånd från kanten
                         const characters = edgeText.split('');
-                        const angleStep = 0.085 * (14 / edgeSize); // Anpassad vinkelstege efter teckenstorlek
+                        
+                        // Beräkna ungefärlig vinkel per tecken baserat på typsnittsstorlek
+                        const angleStep = (scaledFontSize * 0.65) / radius; 
+                        const totalArcAngle = characters.length * angleStep;
 
                         ctx.translate(size / 2, size / 2);
-                        // Börja på toppen och centrera texten
-                        const totalArcAngle = characters.length * angleStep;
-                        ctx.rotate(-totalArcAngle / 2);
+                        // Börja rotera från mitten av texten så den hamnar symmetriskt i toppen
+                        ctx.rotate(-totalArcAngle / 2 + angleStep / 2);
 
                         characters.forEach((char) => {
                             ctx.save();
                             ctx.translate(0, -radius);
+                            ctx.rotate(Math.PI); // Vänd tecknen rätt så de läses utifrån och in
                             ctx.fillText(char, 0, 0);
                             ctx.restore();
                             ctx.rotate(angleStep);
