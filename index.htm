@@ -6,13 +6,28 @@
     <title>Designa din ballmarker - CBT AB</title>
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
     <style>
-        body { font-family: sans-serif; text-align: center; background: #f4f4f4; padding: 20px; color: #333; }
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; text-align: center; background: #f4f4f4; padding: 15px; color: #333; margin: 0; }
         
+        h1 { font-size: 20px; margin: 10px 0 5px 0; }
+        .sub-header { font-size: 13px; color: #666; margin-bottom: 15px; }
+
+        /* Sticky container för mobil */
+        .preview-wrapper {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(244, 244, 244, 0.95);
+            padding: 10px 0;
+            backdrop-filter: blur(5px);
+        }
+
         #marker-container {
             position: relative;
-            width: 220px;
-            height: 220px;
-            margin: 20px auto;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+            transition: all 0.3s ease;
         }
 
         #marker {
@@ -21,37 +36,28 @@
             border-radius: 50%;
             position: relative;
             overflow: hidden; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            border: 4px solid rgba(0,0,0,0.15);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+            border: 3px solid rgba(0,0,0,0.15);
             background-color: #ffd700;
             transition: background 0.3s;
             user-select: none; 
-            box-sizing: border-box;
         }
 
         #margin-mask {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             border-radius: 50%;
             pointer-events: none;
-            box-sizing: border-box;
             z-index: 6; 
-            transition: border-width 0.1s ease, box-shadow 0.3s;
+            transition: border-width 0.1s ease;
         }
 
         #margin-line {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             border-radius: 50%;
             border: 2px dashed rgba(255, 0, 0, 0.7); 
             pointer-events: none; 
-            box-sizing: border-box;
             z-index: 10; 
         }
 
@@ -61,11 +67,9 @@
 
         #uploaded-image {
             position: absolute;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%) scale(1);
-            width: 100%;
-            height: auto;
+            width: 100%; height: auto;
             filter: grayscale(100%) contrast(200%);
             mix-blend-mode: multiply;
             opacity: 0.85;
@@ -76,112 +80,170 @@
 
         #draggable-text {
             position: absolute;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 16px;
-            font-weight: bold;
-            color: #111;
-            cursor: move;
-            touch-action: none;
-            z-index: 7;
-            white-space: nowrap;
+            font-size: 16px; font-weight: bold; color: #111;
+            cursor: move; touch-action: none;
+            z-index: 7; white-space: nowrap;
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
             display: none;
         }
 
         #edge-text-svg {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 8;
-            display: none;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 8; display: none;
         }
 
-        .controls { background: white; padding: 25px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-top: 10px; max-width: 460px; text-align: left; width: 100%; box-sizing: border-box;}
-        .control-group { margin-bottom: 15px; }
-        .control-group label { font-weight: bold; display: block; margin-bottom: 3px; font-size: 14px; }
-        
-        .btn { background: #28a745; color: white; border: none; padding: 14px 20px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 5px; transition: background 0.2s; }
-        .btn:hover { background: #218838; }
+        /* Controls & Tab Navigation */
+        .controls { 
+            background: white; 
+            padding: 15px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
+            margin: 10px auto 0 auto; 
+            max-width: 460px; 
+            text-align: left; 
+            width: 100%;
+        }
 
-        .warning-box { background: #fff3cd; border-left: 4px solid #ff9800; padding: 12px; font-size: 13px; color: #856404; border-radius: 4px; margin-bottom: 15px; line-height: 1.5; }
-        .warning-box strong { color: #d32f2f; }
+        .tab-buttons {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 15px;
+            background: #eee;
+            padding: 4px;
+            border-radius: 8px;
+        }
 
-        .disclaimer { font-size: 12px; color: #666; background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 15px; line-height: 1.4; border: 1px solid #e9ecef; }
-        .contact-box { background: #eef6fc; border-left: 4px solid #0078d4; padding: 10px; font-size: 13px; color: #333; border-radius: 4px; margin-top: 15px; line-height: 1.4; }
-        .contact-box a { color: #0078d4; text-decoration: none; font-weight: bold; }
+        .tab-btn {
+            flex: 1;
+            padding: 10px 4px;
+            font-size: 12px;
+            font-weight: bold;
+            border: none;
+            background: transparent;
+            color: #666;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #0078d4;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .control-group { margin-bottom: 12px; }
+        .control-group label { font-weight: bold; display: block; margin-bottom: 4px; font-size: 13px; }
 
         select, input[type="file"], input[type="range"], input[type="text"], input[type="email"], textarea { 
-            width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; margin-bottom: 5px;
+            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; margin-bottom: 4px;
         }
-        textarea { resize: vertical; height: 80px; }
-        footer { margin-top: 30px; font-size: 12px; color: #777; line-height: 1.5; }
+        textarea { resize: vertical; height: 70px; }
+
+        .btn { background: #28a745; color: white; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 10px; }
+        .btn:hover { background: #218838; }
+
+        .warning-box { background: #fff3cd; border-left: 4px solid #ff9800; padding: 10px; font-size: 12px; color: #856404; border-radius: 4px; margin-bottom: 12px; line-height: 1.4; }
+        .warning-box strong { color: #d32f2f; }
+
+        /* Mobilanpassningar */
+        @media (max-width: 600px) {
+            #marker-container {
+                width: 150px;
+                height: 150px;
+            }
+            .tab-btn { font-size: 11px; padding: 8px 2px; }
+        }
     </style>
 </head>
 <body>
 
-    <h1>CBT AB - Designa din Ballmarker</h1>
-    <p>Välj material, texter, färger/paintfill, ladda upp logga och skicka din förfrågan!</p>
+    <h1>Designa din Ballmarker</h1>
+    <div class="sub-header">CBT AB - Välj material, text, färg & logga</div>
 
-    <div id="marker-container">
-        <div id="marker">
-            <img id="uploaded-image" src="" alt="" style="display:none;">
-            <div id="draggable-text"></div>
-            
-            <svg id="edge-text-svg" viewBox="0 0 200 200">
-                <path id="textPathTop" d="M 25,100 A 75,75 0 1,1 175,100" fill="none" />
-                <text font-weight="bold" fill="#111" text-anchor="middle" id="svgTextNode">
-                    <textPath href="#textPathTop" startOffset="50%" id="edgeTextValue"></textPath>
-                </text>
-            </svg>
+    <!-- STICKY FÖRHANDSGRANSKNING -->
+    <div class="preview-wrapper">
+        <div id="marker-container">
+            <div id="marker">
+                <img id="uploaded-image" src="" alt="" style="display:none;">
+                <div id="draggable-text"></div>
+                
+                <svg id="edge-text-svg" viewBox="0 0 200 200">
+                    <path id="textPathTop" d="M 25,100 A 75,75 0 1,1 175,100" fill="none" />
+                    <text font-weight="bold" fill="#111" text-anchor="middle" id="svgTextNode">
+                        <textPath href="#textPathTop" startOffset="50%" id="edgeTextValue"></textPath>
+                    </text>
+                </svg>
 
-            <div id="margin-mask"></div>
+                <div id="margin-mask"></div>
+            </div>
+            <div id="margin-line"></div>
         </div>
-        <div id="margin-line"></div>
     </div>
 
+    <!-- FLIK-BASERAT GRÄNSSNITT -->
     <div class="controls">
-        <div class="warning-box">
-            <strong>VIKTIGT FÖRE FÖRFRÅGAN:</strong><br>
-            När du klickar på <em>"Skapa förfrågan & öppna e-post"</em> laddas dina bildfiler ner till din enhet, och ditt e-postprogram öppnas. <br>
-            <strong>Du måste själv bifoga de nedladdade bilderna i mailet innan du skickar det!</strong>
+        <div class="tab-buttons">
+            <button type="button" class="tab-btn active" onclick="switchTab('design')">1. Material & Bild</button>
+            <button type="button" class="tab-btn" onclick="switchTab('text')">2. Text & Paintfill</button>
+            <button type="button" class="tab-btn" onclick="switchTab('contact')">3. Skicka</button>
         </div>
 
         <form id="orderForm" onsubmit="handleOrder(event)">
             
-            <div class="control-group">
-                <label>Välj material:</label>
-                <select id="materialSelect" onchange="changeMaterial()">
-                    <option value="Massing (Guld)">Mässing (Guld)</option>
-                    <option value="Rostfritt (Silver)">Rostfritt (Silver)</option>
-                    <option value="Corten (Brunt/Rost)">Corten (Brunt/Rost)</option>
-                </select>
+            <!-- FLIK 1: MATERIAL & BILD -->
+            <div id="tab-design" class="tab-content active">
+                <div class="control-group">
+                    <label>Välj material:</label>
+                    <select id="materialSelect" onchange="changeMaterial()">
+                        <option value="Massing (Guld)">Mässing (Guld)</option>
+                        <option value="Rostfritt (Silver)">Rostfritt (Silver)</option>
+                        <option value="Corten (Brunt/Rost)">Corten (Brunt/Rost)</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Ladda upp logga/bild (valfritt):</label>
+                    <input type="file" id="imageUpload" accept="image/*" onchange="handleImageUpload(event)">
+                </div>
+
+                <div class="control-group">
+                    <label>Skala bild: <span id="scaleValue">100</span>%</label>
+                    <input type="range" id="scaleRange" min="10" max="300" value="100" oninput="scaleImage(this.value)">
+                </div>
+
+                <div class="control-group">
+                    <label>Marginal från kant: <span id="marginValue">5</span>%</label>
+                    <input type="range" id="marginRange" min="0" max="35" value="5" oninput="updateMargin(this.value)">
+                    <small style="color: #666; font-size: 11px;">Döljer element utanför den röda linjen.</small>
+                </div>
+
+                <button type="button" class="btn" style="background:#0078d4;" onclick="switchTab('text')">Vidare till Text & Paintfill ➔</button>
             </div>
 
-            <div class="control-group" style="background: #fdf8e2; padding: 12px; border-radius: 6px; border: 1px solid #f9e79f;">
-                <label style="color: #b7950b; margin-bottom: 8px;">✨ Text & Paintfill (Färgfyllning):</label>
-                
-                <div style="margin-bottom: 12px; border-bottom: 1px dashed #f5cba7; padding-bottom: 10px;">
-                    <label style="font-size: 13px; font-weight: normal;">Text runt kanten (böjd):</label>
+            <!-- FLIK 2: TEXT & PAINTFILL -->
+            <div id="tab-text" class="tab-content">
+                <div class="control-group" style="background: #fdf8e2; padding: 10px; border-radius: 6px; border: 1px solid #f9e79f;">
+                    <label style="color: #b7950b;">Böjd text (längs kanten):</label>
                     <input type="text" id="edgeTextInput" placeholder="T.ex. KLUBBMÄSTARE 2026" oninput="updateTextContent()" style="background: white;">
                     
                     <div style="display: flex; gap: 6px; margin-top: 4px;">
                         <div style="flex: 1;">
-                            <label style="font-size: 11px; font-weight: normal;">Typsnitt:</label>
-                            <select id="edgeFontSelect" onchange="updateTextStyles()" style="background: white; font-size: 12px;">
+                            <select id="edgeFontSelect" onchange="updateTextStyles()" style="background: white; font-size: 11px;">
                                 <option value="sans-serif">Modern</option>
                                 <option value="Georgia, serif">Klassisk</option>
                                 <option value="'Great Vibes', cursive">Handstil</option>
-                                <option value="Impact, sans-serif">Kraftig</option>
+                                <option value="Impact, sans-serif">Block</option>
                             </select>
                         </div>
                         <div style="flex: 1;">
-                            <label style="font-size: 11px; font-weight: normal;">Färg / Paintfill:</label>
-                            <select id="edgePaintSelect" onchange="updateTextStyles()" style="background: white; font-size: 12px;">
+                            <select id="edgePaintSelect" onchange="updateTextStyles()" style="background: white; font-size: 11px;">
                                 <option value="default">Standard gravyr</option>
                                 <option value="#111111">⬛ Svart</option>
                                 <option value="#d32f2f">🟥 Röd</option>
@@ -191,30 +253,27 @@
                                 <option value="#1565c0">🟦 Blå</option>
                             </select>
                         </div>
-                        <div style="width: 75px;">
-                            <label style="font-size: 11px; font-weight: normal;">Storlek:</label>
+                        <div style="width: 70px;">
                             <input type="range" id="edgeTextSizeRange" min="10" max="24" value="14" oninput="updateTextStyles()">
                         </div>
                     </div>
                 </div>
 
-                <div>
-                    <label style="font-size: 13px; font-weight: normal;">Text i mitten (fritt flyttbar):</label>
+                <div class="control-group" style="background: #eef6fc; padding: 10px; border-radius: 6px; border: 1px solid #c7e0f4;">
+                    <label style="color: #0078d4;">Mitten-text (flyttbar):</label>
                     <input type="text" id="freeTextInput" placeholder="T.ex. HOLE IN ONE" oninput="updateTextContent()" style="background: white;">
                     
                     <div style="display: flex; gap: 6px; margin-top: 4px;">
                         <div style="flex: 1;">
-                            <label style="font-size: 11px; font-weight: normal;">Typsnitt:</label>
-                            <select id="freeFontSelect" onchange="updateTextStyles()" style="background: white; font-size: 12px;">
+                            <select id="freeFontSelect" onchange="updateTextStyles()" style="background: white; font-size: 11px;">
                                 <option value="sans-serif">Modern</option>
                                 <option value="Georgia, serif">Klassisk</option>
                                 <option value="'Great Vibes', cursive">Handstil</option>
-                                <option value="Impact, sans-serif">Kraftig</option>
+                                <option value="Impact, sans-serif">Block</option>
                             </select>
                         </div>
                         <div style="flex: 1;">
-                            <label style="font-size: 11px; font-weight: normal;">Färg / Paintfill:</label>
-                            <select id="freePaintSelect" onchange="updateTextStyles()" style="background: white; font-size: 12px;">
+                            <select id="freePaintSelect" onchange="updateTextStyles()" style="background: white; font-size: 11px;">
                                 <option value="default">Standard gravyr</option>
                                 <option value="#111111">⬛ Svart</option>
                                 <option value="#d32f2f">🟥 Röd</option>
@@ -224,68 +283,41 @@
                                 <option value="#1565c0">🟦 Blå</option>
                             </select>
                         </div>
-                        <div style="width: 75px;">
-                            <label style="font-size: 11px; font-weight: normal;">Storlek:</label>
+                        <div style="width: 70px;">
                             <input type="range" id="freeTextSizeRange" min="10" max="32" value="16" oninput="updateTextStyles()">
                         </div>
                     </div>
                 </div>
+
+                <button type="button" class="btn" style="background:#0078d4;" onclick="switchTab('contact')">Vidare till Kontakt & Skicka ➔</button>
             </div>
 
-            <div class="control-group">
-                <label>Ladda upp logga/bild (valfritt):</label>
-                <input type="file" id="imageUpload" accept="image/*" onchange="handleImageUpload(event)">
-            </div>
+            <!-- FLIK 3: KONTAKT & SKICKA -->
+            <div id="tab-contact" class="tab-content">
+                <div class="warning-box">
+                    <strong>OBS:</strong> När du trycker på knappen nedan sparas dina bilder ner på mobilen och mailen öppnas. <strong>Kom ihåg att bifoga bilderna i mailet!</strong>
+                </div>
 
-            <hr style="border:0; border-top:1px solid #eee; margin: 15px 0;">
+                <div class="control-group">
+                    <label>Ditt Namn / Företag:</label>
+                    <input type="text" id="namn" required placeholder="För- och efternamn">
+                </div>
 
-            <div class="control-group">
-                <label>Skala bild: <span id="scaleValue">100</span>%</label>
-                <input type="range" id="scaleRange" min="10" max="300" value="100" oninput="scaleImage(this.value)">
-            </div>
+                <div class="control-group">
+                    <label>Din E-post:</label>
+                    <input type="email" id="epost" required placeholder="namn@exempel.se">
+                </div>
 
-            <div class="control-group">
-                <label>Marginal från kant: <span id="marginValue">5</span>%</label>
-                <input type="range" id="marginRange" min="0" max="35" value="5" oninput="updateMargin(this.value)">
-                <small style="color: #666;">Döljer logga/element utanför den röda streckade linjen (upp till 35%).</small>
-            </div>
+                <div class="control-group">
+                    <label>Meddelande / Antal:</label>
+                    <textarea id="meddelande" placeholder="T.ex. Önskar förfrågan på 50 st..."></textarea>
+                </div>
 
-            <hr style="border:0; border-top:1px solid #eee; margin: 20px 0;">
-
-            <div class="control-group">
-                <label>Ditt Namn / Företag:</label>
-                <input type="text" id="namn" required placeholder="För- och efternamn">
-            </div>
-
-            <div class="control-group">
-                <label>Din E-post:</label>
-                <input type="email" id="epost" required placeholder="namn@exempel.se">
-            </div>
-
-            <div class="control-group">
-                <label>Meddelande / Antal:</label>
-                <textarea id="meddelande" placeholder="T.ex. Önskar 50 st ballmarkers..."></textarea>
-            </div>
-
-            <div class="disclaimer">
-                <strong>Observera:</strong> Alla skickade förfrågningar och designförslag kontrolleras manuellt innan tillverkning. Vissa motiv eller detaljer kan behöva justeras beroende på materialval och tekniska förutsättningar.
-            </div>
-
-            <div class="control-group" style="margin-bottom: 0;">
                 <button type="submit" class="btn">Skapa förfrågan & öppna e-post</button>
             </div>
+
         </form>
-
-        <div class="contact-box">
-            Vid frågor, nå oss direkt på: <br>
-            <a href="mailto:bilger.christian@gmail.com">bilger.christian@gmail.com</a>
-        </div>
     </div>
-
-    <footer>
-        &copy; 2026 CBT AB. Alla rättigheter reserverade. <br>
-        <span style="font-size: 11px; color: #aaa;">Version 1.8</span>
-    </footer>
 
     <script>
         const img = document.getElementById('uploaded-image');
@@ -300,21 +332,29 @@
         let savedImageData = null;
         let originalFile = null; 
 
-        let isDraggingImg = false;
-        let imgXOffset = 0, imgYOffset = 0, imgInitX = 0, imgInitY = 0;
-
-        let isDraggingText = false;
-        let textXOffset = 0, textYOffset = 0, textInitX = 0, textInitY = 0;
+        let isDraggingImg = false, imgXOffset = 0, imgYOffset = 0, imgInitX = 0, imgInitY = 0;
+        let isDraggingText = false, textXOffset = 0, textYOffset = 0, textInitX = 0, textInitY = 0;
 
         window.onload = function() {
             updateMargin(5);
             updateTextStyles();
         };
 
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.getElementById('tab-' + tabId).classList.add('active');
+            
+            // Hitta rätt knapp att marker som aktiv
+            const btns = document.querySelectorAll('.tab-btn');
+            if (tabId === 'design') btns[0].classList.add('active');
+            if (tabId === 'text') btns[1].classList.add('active');
+            if (tabId === 'contact') btns[2].classList.add('active');
+        }
+
         function getActualTextColor(paintVal) {
-            if (paintVal && paintVal !== 'default') {
-                return paintVal;
-            }
+            if (paintVal && paintVal !== 'default') return paintVal;
             const mat = document.getElementById('materialSelect').value;
             if (mat.includes('Corten')) return '#555555';
             if (mat.includes('Rostfritt')) return '#1f1f1f';
@@ -351,8 +391,7 @@
             document.getElementById('scaleRange').value = 100;
             document.getElementById('scaleValue').innerText = 100;
             img.style.width = '100%';
-            imgXOffset = 0;
-            imgYOffset = 0;
+            imgXOffset = 0; imgYOffset = 0;
             updateImgTransform();
         }
 
@@ -374,48 +413,37 @@
             const edgePaint = document.getElementById('edgePaintSelect').value;
             const freePaint = document.getElementById('freePaintSelect').value;
 
-            const freeColor = getActualTextColor(freePaint);
             draggableText.style.fontSize = freeSize + 'px';
             draggableText.style.fontFamily = freeFont;
-            draggableText.style.color = freeColor;
+            draggableText.style.color = getActualTextColor(freePaint);
 
-            const edgeColor = getActualTextColor(edgePaint);
             svgTextNode.setAttribute('font-size', edgeSize);
             svgTextNode.style.fontFamily = edgeFont;
-            svgTextNode.setAttribute('fill', edgeColor);
+            svgTextNode.setAttribute('fill', getActualTextColor(edgePaint));
         }
 
         function updateTextContent() {
             const edgeVal = document.getElementById('edgeTextInput').value;
             const freeVal = document.getElementById('freeTextInput').value;
 
-            if (edgeVal.trim()) {
-                edgeTextValue.textContent = edgeVal;
-                edgeTextSvg.style.display = 'block';
-            } else {
-                edgeTextSvg.style.display = 'none';
-            }
+            edgeTextValue.textContent = edgeVal;
+            edgeTextSvg.style.display = edgeVal.trim() ? 'block' : 'none';
 
-            if (freeVal.trim()) {
-                draggableText.innerText = freeVal;
-                draggableText.style.display = 'block';
-            } else {
-                draggableText.style.display = 'none';
-            }
+            draggableText.innerText = freeVal;
+            draggableText.style.display = freeVal.trim() ? 'block' : 'none';
         }
 
         function updateMargin(val) {
             const marginPercent = parseInt(val);
             document.getElementById('marginValue').innerText = marginPercent;
             
-            const markerSize = marker.offsetWidth || 220;
+            const markerSize = marker.offsetWidth || 150;
             const marginPx = (marginPercent / 100) * (markerSize / 2);
             
             marginLine.style.top = marginPx + 'px';
             marginLine.style.left = marginPx + 'px';
             marginLine.style.width = (markerSize - (2 * marginPx)) + 'px';
             marginLine.style.height = (markerSize - (2 * marginPx)) + 'px';
-            marginLine.style.borderRadius = '50%';
 
             let bgColor = '#b8860b';
             const valMat = document.getElementById('materialSelect').value;
@@ -425,16 +453,15 @@
             marginMask.style.border = `${marginPx}px solid ${bgColor}`;
         }
 
-        img.addEventListener("mousedown", (e) => startDrag(e, 'img'), false);
-        img.addEventListener("touchstart", (e) => startDrag(e, 'img'), false);
+        img.addEventListener("mousedown", (e) => startDrag(e, 'img'));
+        img.addEventListener("touchstart", (e) => startDrag(e, 'img'));
+        draggableText.addEventListener("mousedown", (e) => startDrag(e, 'text'));
+        draggableText.addEventListener("touchstart", (e) => startDrag(e, 'text'));
 
-        draggableText.addEventListener("mousedown", (e) => startDrag(e, 'text'), false);
-        draggableText.addEventListener("touchstart", (e) => startDrag(e, 'text'), false);
-
-        window.addEventListener("mouseup", endDrag, false);
-        window.addEventListener("touchend", endDrag, false);
-        window.addEventListener("mousemove", dragMove, false);
-        window.addEventListener("touchmove", dragMove, false);
+        window.addEventListener("mouseup", endDrag);
+        window.addEventListener("touchend", endDrag);
+        window.addEventListener("mousemove", dragMove);
+        window.addEventListener("touchmove", dragMove);
 
         let activeTarget = null;
 
@@ -447,7 +474,7 @@
                 isDraggingImg = true;
                 imgInitX = clientX - imgXOffset;
                 imgInitY = clientY - imgYOffset;
-            } else if (targetType === 'text') {
+            } else {
                 isDraggingText = true;
                 textInitX = clientX - textXOffset;
                 textInitY = clientY - textYOffset;
@@ -455,9 +482,7 @@
         }
 
         function endDrag() {
-            isDraggingImg = false;
-            isDraggingText = false;
-            activeTarget = null;
+            isDraggingImg = false; isDraggingText = false; activeTarget = null;
         }
 
         function dragMove(e) {
@@ -477,54 +502,21 @@
             }
         }
 
-        function getReadableFontName(fontValue) {
-            if (fontValue.includes('Great Vibes')) return 'Handstil';
-            if (fontValue.includes('Georgia')) return 'Klassisk (Serif)';
-            if (fontValue.includes('Impact')) return 'Kraftig (Block)';
-            return 'Modern (Standard)';
-        }
-
-        function getReadablePaintName(paintValue) {
-            switch(paintValue) {
-                case '#111111': return 'Svart Paintfill';
-                case '#d32f2f': return 'Röd Paintfill';
-                case '#ffffff': return 'Vit Paintfill';
-                case '#c0c0c0': return 'Silver Paintfill';
-                case '#2e7d32': return 'Grön Paintfill';
-                case '#1565c0': return 'Blå Paintfill';
-                default: return 'Standard gravyr (Ingen färgfyllning)';
-            }
-        }
-
         function handleOrder(event) {
             event.preventDefault();
 
             const namn = document.getElementById('namn').value;
             const epost = document.getElementById('epost').value;
             const material = document.getElementById('materialSelect').value;
-            const skalning = document.getElementById('scaleRange').value + '%';
-            const marginal = document.getElementById('marginRange').value + '%';
             const meddelande = document.getElementById('meddelande').value || '';
             
             const edgeText = document.getElementById('edgeTextInput').value;
             const freeText = document.getElementById('freeTextInput').value;
-            const edgeSize = parseInt(document.getElementById('edgeTextSizeRange').value);
-            const freeSize = parseInt(document.getElementById('freeTextSizeRange').value);
-            const edgeFontVal = document.getElementById('edgeFontSelect').value;
-            const freeFontVal = document.getElementById('freeFontSelect').value;
-            const edgePaintVal = document.getElementById('edgePaintSelect').value;
-            const freePaintVal = document.getElementById('freePaintSelect').value;
 
-            const edgeFontName = getReadableFontName(edgeFontVal);
-            const freeFontName = getReadableFontName(freeFontVal);
-            const edgePaintName = getReadablePaintName(edgePaintVal);
-            const freePaintName = getReadablePaintName(freePaintVal);
-
-            // Skapa Canvas för export
+            // Canvas Export
             const canvas = document.createElement('canvas');
             const size = 600; 
-            canvas.width = size;
-            canvas.height = size;
+            canvas.width = size; canvas.height = size;
             const ctx = canvas.getContext('2d');
 
             ctx.beginPath();
@@ -532,119 +524,85 @@
             ctx.clip();
 
             let bgGrad = ctx.createLinearGradient(0, 0, size, size);
-            if (material.includes('Corten')) {
-                bgGrad.addColorStop(0, '#a0522d');
-                bgGrad.addColorStop(1, '#8b4513');
-            } else if (material.includes('Rostfritt')) {
-                bgGrad.addColorStop(0, '#e0e0e0');
-                bgGrad.addColorStop(1, '#9e9e9e');
-            } else { 
-                bgGrad.addColorStop(0, '#ffd700');
-                bgGrad.addColorStop(1, '#b8860b');
-            }
+            if (material.includes('Corten')) { bgGrad.addColorStop(0, '#a0522d'); bgGrad.addColorStop(1, '#8b4513'); }
+            else if (material.includes('Rostfritt')) { bgGrad.addColorStop(0, '#e0e0e0'); bgGrad.addColorStop(1, '#9e9e9e'); }
+            else { bgGrad.addColorStop(0, '#ffd700'); bgGrad.addColorStop(1, '#b8860b'); }
 
             ctx.fillStyle = bgGrad;
             ctx.fillRect(0, 0, size, size);
 
-            const markerWidth = marker.offsetWidth || 220;
+            const markerWidth = marker.offsetWidth || 150;
             const scaleFactor = size / markerWidth;
 
-            // --- MOBIL-SÄKER BILD-RITNING ---
+            // Bild-ritning
             if (img.src && img.style.display !== 'none' && img.complete && img.naturalWidth !== 0) {
                 ctx.save();
-                
-                // Räkna ut storlek direkt från bildens naturliga proportioner
                 const userScale = parseInt(document.getElementById('scaleRange').value) / 100;
                 const imgDrawWidth = size * userScale;
                 const imgDrawHeight = (img.naturalHeight / img.naturalWidth) * imgDrawWidth;
-                
                 const imgCenterX = (size / 2) + (imgXOffset * scaleFactor);
                 const imgCenterY = (size / 2) + (imgYOffset * scaleFactor);
 
                 ctx.globalCompositeOperation = 'multiply';
                 ctx.globalAlpha = 0.85;
-                
-                ctx.drawImage(
-                    img, 
-                    imgCenterX - (imgDrawWidth / 2), 
-                    imgCenterY - (imgDrawHeight / 2), 
-                    imgDrawWidth, 
-                    imgDrawHeight
-                );
+                ctx.drawImage(img, imgCenterX - (imgDrawWidth / 2), imgCenterY - (imgDrawHeight / 2), imgDrawWidth, imgDrawHeight);
                 ctx.restore();
             }
 
-            // 1. MARGINAL-MASK
+            // Marginal
             const marginPercent = parseInt(document.getElementById('marginRange').value);
             if (marginPercent > 0) {
-                const marginPxScreen = (marginPercent / 100) * (markerWidth / 2);
-                const marginPxCanvas = marginPxScreen * scaleFactor;
-                const innerRadius = (size / 2) - marginPxCanvas;
-
+                const marginPxCanvas = ((marginPercent / 100) * (markerWidth / 2)) * scaleFactor;
                 ctx.beginPath();
                 ctx.arc(size / 2, size / 2, size + 100, 0, Math.PI * 2, false);
-                ctx.arc(size / 2, size / 2, innerRadius, 0, Math.PI * 2, true);
+                ctx.arc(size / 2, size / 2, (size / 2) - marginPxCanvas, 0, Math.PI * 2, true);
                 ctx.fillStyle = bgGrad;
                 ctx.fill();
             }
 
-            // 2. KANTTEXT
+            // Kanttext
             if (edgeText.trim()) {
                 ctx.save();
-                const scaledFontSize = edgeSize * scaleFactor;
-                ctx.font = `bold ${scaledFontSize}px ${edgeFontVal}`;
-                ctx.fillStyle = getActualTextColor(edgePaintVal);
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-
+                ctx.font = `bold ${parseInt(document.getElementById('edgeTextSizeRange').value) * scaleFactor}px ${document.getElementById('edgeFontSelect').value}`;
+                ctx.fillStyle = getActualTextColor(document.getElementById('edgePaintSelect').value);
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                 const radius = (size / 2) - (24 * scaleFactor); 
                 const chars = edgeText.split('');
-                
                 let totalAngle = 0;
                 chars.forEach(c => totalAngle += ctx.measureText(c).width / radius);
-
                 let currentAngle = (-Math.PI / 2) - (totalAngle / 2);
 
                 chars.forEach((char) => {
-                    const charWidth = ctx.measureText(char).width;
-                    const angleSlice = charWidth / radius;
-                    
+                    const angleSlice = ctx.measureText(char).width / radius;
                     currentAngle += angleSlice / 2;
-
                     ctx.save();
                     ctx.translate(size / 2, size / 2);
                     ctx.rotate(currentAngle);
                     ctx.translate(radius, 0);
                     ctx.rotate(Math.PI / 2);
-                    
                     ctx.fillText(char, 0, 0);
                     ctx.restore();
-
                     currentAngle += angleSlice / 2;
                 });
                 ctx.restore();
             }
 
-            // 3. MITTEN-TEXT
+            // Mitten-text
             if (freeText.trim()) {
                 ctx.save();
-                ctx.font = `bold ${freeSize * scaleFactor}px ${freeFontVal}`;
-                ctx.fillStyle = getActualTextColor(freePaintVal);
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                const textCanvasX = (size / 2) + (textXOffset * scaleFactor);
-                const textCanvasY = (size / 2) + (textYOffset * scaleFactor);
-                ctx.fillText(freeText, textCanvasX, textCanvasY);
+                ctx.font = `bold ${parseInt(document.getElementById('freeTextSizeRange').value) * scaleFactor}px ${document.getElementById('freeFontSelect').value}`;
+                ctx.fillStyle = getActualTextColor(document.getElementById('freePaintSelect').value);
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(freeText, (size / 2) + (textXOffset * scaleFactor), (size / 2) + (textYOffset * scaleFactor));
                 ctx.restore();
             }
 
-            // Ladda ner canvas-bilden
+            // Nedladdningar
             const link1 = document.createElement('a');
             link1.download = 'ballmarker-designforstag.png';
             link1.href = canvas.toDataURL('image/png');
             link1.click();
 
-            // Ladda ner originalbilden om sådan finns
             if (originalFile) {
                 setTimeout(() => {
                     const link2 = document.createElement('a');
@@ -654,31 +612,13 @@
                 }, 400);
             }
 
-            // Öppna mail-klienten
             setTimeout(() => {
-                alert("Tack! Ditt designförslag och din originalbild har nu laddats ner till din enhet.\n\nE-postprogrammet öppnas nu. Kom ihåg att BIFOGA de nedladdade bilderna i mailet innan du skickar det!");
-
+                alert("Bilderna har sparats! Öppnar nu ditt e-postprogram...");
                 const emailSubject = encodeURIComponent("Förfrågan Ballmarker - " + namn);
-                const emailBody = encodeURIComponent(
-                    "Hej CBT AB!\n\n" +
-                    "Jag skickar en förfrågan gällande tillverkning av ballmarkers.\n\n" +
-                    "--- KUNDUPPGIFTER ---\n" +
-                    "Namn: " + namn + "\n" +
-                    "E-post: " + epost + "\n" +
-                    "Material: " + material + "\n" +
-                    "Skalning: " + skalning + "\n" +
-                    "Marginal från kant: " + marginal + "\n\n" +
-                    "--- TEXT, TYPSNITT & PAINTFILL ---\n" +
-                    "Kanttext: " + (edgeText ? `"${edgeText}" (Typsnitt: ${edgeFontName}, ${edgePaintName})` : "Ingen") + "\n" +
-                    "Mitten-text: " + (freeText ? `"${freeText}" (Typsnitt: ${freeFontName}, ${freePaintName})` : "Ingen") + "\n\n" +
-                    "Meddelande:\n" + meddelande + "\n\n" +
-                    "OBS: Jag har bifogat bilderna till detta meddelande."
-                );
-
+                const emailBody = encodeURIComponent("Hej CBT AB!\n\nJag vill beställa ballmarkers.\nNamn: " + namn + "\nE-post: " + epost + "\nMaterial: " + material + "\nMeddelande: " + meddelande);
                 window.location.href = `mailto:bilger.christian@gmail.com?subject=${emailSubject}&body=${emailBody}`;
-            }, 1000);
+            }, 800);
         }
     </script>
-
 </body>
 </html>
