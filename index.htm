@@ -88,7 +88,7 @@
             touch-action: none;
             z-index: 7;
             white-space: nowrap;
-            text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
             display: none;
         }
 
@@ -104,7 +104,7 @@
             display: none;
         }
 
-        .controls { background: white; padding: 25px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-top: 10px; max-width: 440px; text-align: left; width: 100%; box-sizing: border-box;}
+        .controls { background: white; padding: 25px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-top: 10px; max-width: 460px; text-align: left; width: 100%; box-sizing: border-box;}
         .control-group { margin-bottom: 15px; }
         .control-group label { font-weight: bold; display: block; margin-bottom: 3px; font-size: 14px; }
         
@@ -128,7 +128,7 @@
 <body>
 
     <h1>CBT AB - Designa din Ballmarker</h1>
-    <p>Välj material, texter, typsnitt, ladda upp logga, anpassa och skicka din förfrågan!</p>
+    <p>Välj material, texter, färger/paintfill, ladda upp logga och skicka din förfrågan!</p>
 
     <div id="marker-container">
         <div id="marker">
@@ -136,9 +136,8 @@
             <div id="draggable-text"></div>
             
             <svg id="edge-text-svg" viewBox="0 0 200 200">
-                <!-- Sökväg som ligger nära toppen av cirkeln (radie ~75) -->
                 <path id="textPathTop" d="M 25,100 A 75,75 0 1,1 175,100" fill="none" />
-                <text font-weight="bold" fill="#111" text-anchor="middle">
+                <text font-weight="bold" fill="#111" text-anchor="middle" id="svgTextNode">
                     <textPath href="#textPathTop" startOffset="50%" id="edgeTextValue"></textPath>
                 </text>
             </svg>
@@ -166,27 +165,39 @@
                 </select>
             </div>
 
-            <!-- TEXTINSTÄLLNINGAR MED TYPSNITT -->
+            <!-- TEXTINSTÄLLNINGAR MED TYPSNITT OCH PAINTFILL -->
             <div class="control-group" style="background: #fdf8e2; padding: 12px; border-radius: 6px; border: 1px solid #f9e79f;">
-                <label style="color: #b7950b; margin-bottom: 8px;">✨ Textinställningar:</label>
+                <label style="color: #b7950b; margin-bottom: 8px;">✨ Text & Paintfill (Färgfyllning):</label>
                 
                 <!-- KANTTEXT -->
                 <div style="margin-bottom: 12px; border-bottom: 1px dashed #f5cba7; padding-bottom: 10px;">
                     <label style="font-size: 13px; font-weight: normal;">Text runt kanten (böjd):</label>
                     <input type="text" id="edgeTextInput" placeholder="T.ex. KLUBBMÄSTARE 2026" oninput="updateTextContent()" style="background: white;">
                     
-                    <div style="display: flex; gap: 8px; margin-top: 4px;">
+                    <div style="display: flex; gap: 6px; margin-top: 4px;">
                         <div style="flex: 1;">
                             <label style="font-size: 11px; font-weight: normal;">Typsnitt:</label>
-                            <select id="edgeFontSelect" onchange="updateTextStyles()" style="background: white; font-size: 13px;">
-                                <option value="sans-serif">Modern (Standard)</option>
-                                <option value="Georgia, serif">Klassisk (Serif)</option>
-                                <option value="'Great Vibes', cursive">Elegant Handstil (Script)</option>
-                                <option value="Impact, sans-serif">Kraftig (Stencil/Block)</option>
+                            <select id="edgeFontSelect" onchange="updateTextStyles()" style="background: white; font-size: 12px;">
+                                <option value="sans-serif">Modern</option>
+                                <option value="Georgia, serif">Klassisk</option>
+                                <option value="'Great Vibes', cursive">Handstil</option>
+                                <option value="Impact, sans-serif">Kraftig</option>
                             </select>
                         </div>
                         <div style="flex: 1;">
-                            <label style="font-size: 11px; font-weight: normal;">Storlek: <span id="edgeTextSizeVal">14</span>px</label>
+                            <label style="font-size: 11px; font-weight: normal;">Färg / Paintfill:</label>
+                            <select id="edgePaintSelect" onchange="updateTextStyles()" style="background: white; font-size: 12px;">
+                                <option value="default">Standard gravyr</option>
+                                <option value="#111111">⬛ Svart</option>
+                                <option value="#d32f2f">🟥 Röd</option>
+                                <option value="#ffffff">⬜ Vit</option>
+                                <option value="#c0c0c0">◽ Silver</option>
+                                <option value="#2e7d32">🟩 Grön</option>
+                                <option value="#1565c0">🟦 Blå</option>
+                            </select>
+                        </div>
+                        <div style="width: 75px;">
+                            <label style="font-size: 11px; font-weight: normal;">Storlek:</label>
                             <input type="range" id="edgeTextSizeRange" min="10" max="24" value="14" oninput="updateTextStyles()">
                         </div>
                     </div>
@@ -197,18 +208,30 @@
                     <label style="font-size: 13px; font-weight: normal;">Text i mitten (fritt flyttbar):</label>
                     <input type="text" id="freeTextInput" placeholder="T.ex. HOLE IN ONE" oninput="updateTextContent()" style="background: white;">
                     
-                    <div style="display: flex; gap: 8px; margin-top: 4px;">
+                    <div style="display: flex; gap: 6px; margin-top: 4px;">
                         <div style="flex: 1;">
                             <label style="font-size: 11px; font-weight: normal;">Typsnitt:</label>
-                            <select id="freeFontSelect" onchange="updateTextStyles()" style="background: white; font-size: 13px;">
-                                <option value="sans-serif">Modern (Standard)</option>
-                                <option value="Georgia, serif">Klassisk (Serif)</option>
-                                <option value="'Great Vibes', cursive">Elegant Handstil (Script)</option>
-                                <option value="Impact, sans-serif">Kraftig (Stencil/Block)</option>
+                            <select id="freeFontSelect" onchange="updateTextStyles()" style="background: white; font-size: 12px;">
+                                <option value="sans-serif">Modern</option>
+                                <option value="Georgia, serif">Klassisk</option>
+                                <option value="'Great Vibes', cursive">Handstil</option>
+                                <option value="Impact, sans-serif">Kraftig</option>
                             </select>
                         </div>
                         <div style="flex: 1;">
-                            <label style="font-size: 11px; font-weight: normal;">Storlek: <span id="freeTextSizeVal">16</span>px</label>
+                            <label style="font-size: 11px; font-weight: normal;">Färg / Paintfill:</label>
+                            <select id="freePaintSelect" onchange="updateTextStyles()" style="background: white; font-size: 12px;">
+                                <option value="default">Standard gravyr</option>
+                                <option value="#111111">⬛ Svart</option>
+                                <option value="#d32f2f">🟥 Röd</option>
+                                <option value="#ffffff">⬜ Vit</option>
+                                <option value="#c0c0c0">◽ Silver</option>
+                                <option value="#2e7d32">🟩 Grön</option>
+                                <option value="#1565c0">🟦 Blå</option>
+                            </select>
+                        </div>
+                        <div style="width: 75px;">
+                            <label style="font-size: 11px; font-weight: normal;">Storlek:</label>
                             <input type="range" id="freeTextSizeRange" min="10" max="32" value="16" oninput="updateTextStyles()">
                         </div>
                     </div>
@@ -230,7 +253,7 @@
             <div class="control-group">
                 <label>Marginal från kant: <span id="marginValue">5</span>%</label>
                 <input type="range" id="marginRange" min="0" max="35" value="5" oninput="updateMargin(this.value)">
-                <small style="color: #666;">Döljer logga/element utanför den röda streckade linjen (nu upp till 35%).</small>
+                <small style="color: #666;">Döljer logga/element utanför den röda streckade linjen (upp till 35%).</small>
             </div>
 
             <hr style="border:0; border-top:1px solid #eee; margin: 20px 0;">
@@ -251,7 +274,7 @@
             </div>
 
             <div class="disclaimer">
-                <strong>Observera:</strong> Alla skickade förfrågningar och designförslag kontrolleras manuellt innan tillverkning. Vissa motiv eller detaljer kan behöva justeras eller kan ej produceras beroende på materialval och tekniska förutsättningar.
+                <strong>Observera:</strong> Alla skickade förfrågningar och designförslag kontrolleras manuellt innan tillverkning. Vissa motiv eller detaljer kan behöva justeras beroende på materialval och tekniska förutsättningar.
             </div>
 
             <div class="control-group" style="margin-bottom: 0;">
@@ -267,13 +290,14 @@
 
     <footer>
         &copy; 2026 CBT AB. Alla rättigheter reserverade. <br>
-        <span style="font-size: 11px; color: #aaa;">Version 1.6</span>
+        <span style="font-size: 11px; color: #aaa;">Version 1.7</span>
     </footer>
 
     <script>
         const img = document.getElementById('uploaded-image');
         const draggableText = document.getElementById('draggable-text');
         const edgeTextSvg = document.getElementById('edge-text-svg');
+        const svgTextNode = document.getElementById('svgTextNode');
         const edgeTextValue = document.getElementById('edgeTextValue');
         const marginLine = document.getElementById('margin-line');
         const marginMask = document.getElementById('margin-mask');
@@ -293,6 +317,18 @@
             updateTextStyles();
         };
 
+        // Hjälpfunktion för att hämta rätt färg baserat på material & paintfill
+        function getActualTextColor(paintVal) {
+            if (paintVal && paintVal !== 'default') {
+                return paintVal;
+            }
+            // Standard gravyrfärg baserad på material
+            const mat = document.getElementById('materialSelect').value;
+            if (mat.includes('Corten')) return '#555555';     // Grafitgrå för Corten
+            if (mat.includes('Rostfritt')) return '#1f1f1f';  // Mörkgrå/Svart för Rostfritt
+            return '#4a3300';                                 // Djup mörk mässingsbrun för Mässing
+        }
+
         function changeMaterial() {
             const val = document.getElementById('materialSelect').value;
             marker.className = '';
@@ -301,6 +337,7 @@
             else marker.classList.add('massing');
             
             updateMargin(document.getElementById('marginRange').value);
+            updateTextStyles(); // Uppdatera textfärg om 'Standard gravyr' är vald
         }
 
         function handleImageUpload(event) {
@@ -342,15 +379,20 @@
             const edgeSize = document.getElementById('edgeTextSizeRange').value;
             const freeFont = document.getElementById('freeFontSelect').value;
             const edgeFont = document.getElementById('edgeFontSelect').value;
+            const edgePaint = document.getElementById('edgePaintSelect').value;
+            const freePaint = document.getElementById('freePaintSelect').value;
 
-            document.getElementById('freeTextSizeVal').innerText = freeSize;
-            document.getElementById('edgeTextSizeVal').innerText = edgeSize;
-
+            // Mitten-text
+            const freeColor = getActualTextColor(freePaint);
             draggableText.style.fontSize = freeSize + 'px';
             draggableText.style.fontFamily = freeFont;
+            draggableText.style.color = freeColor;
 
-            edgeTextSvg.querySelector('text').setAttribute('font-size', edgeSize);
-            edgeTextSvg.querySelector('text').style.fontFamily = edgeFont;
+            // Kant-text
+            const edgeColor = getActualTextColor(edgePaint);
+            svgTextNode.setAttribute('font-size', edgeSize);
+            svgTextNode.style.fontFamily = edgeFont;
+            svgTextNode.setAttribute('fill', edgeColor);
         }
 
         function updateTextContent() {
@@ -446,10 +488,22 @@
         }
 
         function getReadableFontName(fontValue) {
-            if (fontValue.includes('Great Vibes')) return 'Elegant Handstil (Script)';
+            if (fontValue.includes('Great Vibes')) return 'Handstil';
             if (fontValue.includes('Georgia')) return 'Klassisk (Serif)';
-            if (fontValue.includes('Impact')) return 'Kraftig (Stencil/Block)';
+            if (fontValue.includes('Impact')) return 'Kraftig (Block)';
             return 'Modern (Standard)';
+        }
+
+        function getReadablePaintName(paintValue) {
+            switch(paintValue) {
+                case '#111111': return 'Svart Paintfill';
+                case '#d32f2f': return 'Röd Paintfill';
+                case '#ffffff': return 'Vit Paintfill';
+                case '#c0c0c0': return 'Silver Paintfill';
+                case '#2e7d32': return 'Grön Paintfill';
+                case '#1565c0': return 'Blå Paintfill';
+                default: return 'Standard gravyr (Ingen färgfyllning)';
+            }
         }
 
         function handleOrder(event) {
@@ -460,8 +514,6 @@
             const material = document.getElementById('materialSelect').value;
             const skalning = document.getElementById('scaleRange').value + '%';
             const marginal = document.getElementById('marginRange').value + '%';
-            
-            // Fixat syntaxfelet för meddelande-rutan:
             const meddelande = document.getElementById('meddelande').value || '';
             
             const edgeText = document.getElementById('edgeTextInput').value;
@@ -470,9 +522,13 @@
             const freeSize = parseInt(document.getElementById('freeTextSizeRange').value);
             const edgeFontVal = document.getElementById('edgeFontSelect').value;
             const freeFontVal = document.getElementById('freeFontSelect').value;
+            const edgePaintVal = document.getElementById('edgePaintSelect').value;
+            const freePaintVal = document.getElementById('freePaintSelect').value;
 
             const edgeFontName = getReadableFontName(edgeFontVal);
             const freeFontName = getReadableFontName(freeFontVal);
+            const edgePaintName = getReadablePaintName(edgePaintVal);
+            const freePaintName = getReadablePaintName(freePaintVal);
 
             // Canvas för bildexport
             const canvas = document.createElement('canvas');
@@ -506,7 +562,7 @@
             function finishCanvasGeneration() {
                 const proceedWithTexts = () => {
                     
-                    // 1. RITA UT MARGINAL-MASK FÖRST (Döljer bilden men ligger under texterna)
+                    // 1. MARGINAL-MASK
                     const marginPercent = parseInt(document.getElementById('marginRange').value);
                     if (marginPercent > 0) {
                         const marginPxScreen = (marginPercent / 100) * (markerWidth / 2);
@@ -520,52 +576,48 @@
                         ctx.fill();
                     }
 
-                    // 2. RITA UT KANTTEXT ÖVERST (Finslipad rotation och placering)
+                    // 2. KANTTEXT
                     if (edgeText.trim()) {
                         ctx.save();
                         const scaledFontSize = edgeSize * scaleFactor;
                         ctx.font = `bold ${scaledFontSize}px ${edgeFontVal}`;
-                        ctx.fillStyle = '#111';
+                        ctx.fillStyle = getActualTextColor(edgePaintVal);
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
 
                         const radius = (size / 2) - (24 * scaleFactor); 
                         const chars = edgeText.split('');
                         
-                        // Beräkna total vinkel (radians) texten kommer ta upp
                         let totalAngle = 0;
                         chars.forEach(c => totalAngle += ctx.measureText(c).width / radius);
 
-                        // Startvinkel: -90 grader är rakt upp (klockan 12 i canvas), minus hälften av textens längd
                         let currentAngle = (-Math.PI / 2) - (totalAngle / 2);
 
                         chars.forEach((char) => {
                             const charWidth = ctx.measureText(char).width;
                             const angleSlice = charWidth / radius;
                             
-                            // Flytta till mitten av bokstaven
                             currentAngle += angleSlice / 2;
 
                             ctx.save();
-                            ctx.translate(size / 2, size / 2); // Utgå från mitten
-                            ctx.rotate(currentAngle);          // Rotera vinkeln
-                            ctx.translate(radius, 0);          // Flytta ut till radien
-                            ctx.rotate(Math.PI / 2);           // Rotera tecknet 90 grader så det står upprätt mot kanten
+                            ctx.translate(size / 2, size / 2);
+                            ctx.rotate(currentAngle);
+                            ctx.translate(radius, 0);
+                            ctx.rotate(Math.PI / 2);
                             
                             ctx.fillText(char, 0, 0);
                             ctx.restore();
 
-                            // Addera andra halvan av tecknets vinkel innan nästa loop
                             currentAngle += angleSlice / 2;
                         });
                         ctx.restore();
                     }
 
-                    // 3. RITA UT MITTEN-TEXT ÖVERST
+                    // 3. MITTEN-TEXT
                     if (freeText.trim()) {
                         ctx.save();
                         ctx.font = `bold ${freeSize * scaleFactor}px ${freeFontVal}`;
-                        ctx.fillStyle = '#111';
+                        ctx.fillStyle = getActualTextColor(freePaintVal);
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
                         const textCanvasX = (size / 2) + (textXOffset * scaleFactor);
@@ -590,7 +642,7 @@
                         }, 400);
                     }
 
-                    // Öppna e-postprogrammet med typsnittsinfo i mailet
+                    // Öppna e-postprogrammet med fullständig specifikation
                     setTimeout(() => {
                         alert("Tack! Ditt designförslag och din originalbild har nu laddats ner till din enhet.\n\nE-postprogrammet öppnas nu. Kom ihåg att BIFOGA de nedladdade bilderna i mailet innan du skickar det!");
 
@@ -604,9 +656,9 @@
                             "Material: " + material + "\n" +
                             "Skalning: " + skalning + "\n" +
                             "Marginal från kant: " + marginal + "\n\n" +
-                            "--- TEXT & TYPSNITT ---\n" +
-                            "Kanttext: " + (edgeText ? `"${edgeText}" (Typsnitt: ${edgeFontName})` : "Ingen") + "\n" +
-                            "Mitten-text: " + (freeText ? `"${freeText}" (Typsnitt: ${freeFontName})` : "Ingen") + "\n\n" +
+                            "--- TEXT, TYPSNITT & PAINTFILL ---\n" +
+                            "Kanttext: " + (edgeText ? `"${edgeText}" (Typsnitt: ${edgeFontName}, ${edgePaintName})` : "Ingen") + "\n" +
+                            "Mitten-text: " + (freeText ? `"${freeText}" (Typsnitt: ${freeFontName}, ${freePaintName})` : "Ingen") + "\n\n" +
                             "Meddelande:\n" + meddelande + "\n\n" +
                             "OBS: Jag har bifogat bilderna till detta meddelande."
                         );
