@@ -73,6 +73,35 @@
             z-index: 5; 
         }
 
+        /* Fritt flyttbar text på skärmen */
+        #draggable-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px;
+            font-weight: bold;
+            color: #111;
+            cursor: move;
+            touch-action: none;
+            z-index: 7;
+            white-space: nowrap;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+            display: none;
+        }
+
+        /* SVG för text längs kanten */
+        #edge-text-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 8;
+            display: none;
+        }
+
         .controls { background: white; padding: 25px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-top: 10px; max-width: 440px; text-align: left; width: 100%; box-sizing: border-box;}
         .control-group { margin-bottom: 15px; }
         .control-group label { font-weight: bold; display: block; margin-bottom: 3px; font-size: 14px; }
@@ -84,7 +113,6 @@
         .warning-box strong { color: #d32f2f; }
 
         .disclaimer { font-size: 12px; color: #666; background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 15px; line-height: 1.4; border: 1px solid #e9ecef; }
-
         .contact-box { background: #eef6fc; border-left: 4px solid #0078d4; padding: 10px; font-size: 13px; color: #333; border-radius: 4px; margin-top: 15px; line-height: 1.4; }
         .contact-box a { color: #0078d4; text-decoration: none; font-weight: bold; }
 
@@ -92,18 +120,26 @@
             width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;
         }
         textarea { resize: vertical; height: 80px; }
-
         footer { margin-top: 30px; font-size: 12px; color: #777; line-height: 1.5; }
     </style>
 </head>
 <body>
 
     <h1>CBT AB - Designa din Ballmarker</h1>
-    <p>Välj material, ladda upp din logga, anpassa och skicka din förfrågan!</p>
+    <p>Välj material, ladda upp logga/text, anpassa och skicka din förfrågan!</p>
 
     <div id="marker-container">
         <div id="marker">
             <img id="uploaded-image" src="" alt="" style="display:none;">
+            <div id="draggable-text"></div>
+            
+            <svg id="edge-text-svg" viewBox="0 0 200 200">
+                <path id="textPathTop" d="M 25,100 A 75,75 0 1,1 175,100" fill="none" />
+                <text font-size="14" font-weight="bold" fill="#111" text-anchor="middle">
+                    <textPath href="#textPathTop" startOffset="50%" id="edgeTextValue"></textPath>
+                </text>
+            </svg>
+
             <div id="margin-mask"></div>
         </div>
         <div id="margin-line"></div>
@@ -128,9 +164,32 @@
             </div>
 
             <div class="control-group">
-                <label>Ladda upp logga/bild:</label>
-                <input type="file" id="imageUpload" accept="image/*" required onchange="handleImageUpload(event)">
+                <label>Ladda upp logga/bild (valfritt om enbart text):</label>
+                <input type="file" id="imageUpload" accept="image/*" onchange="handleImageUpload(event)">
             </div>
+
+            <hr style="border:0; border-top:1px solid #eee; margin: 15px 0;">
+
+            <!-- Textinställningar -->
+            <div class="control-group">
+                <label>Infoga text:</label>
+                <input type="text" id="customTextInput" placeholder="T.ex. KLUBBMÄSTARE 2026" oninput="updateTextContent()">
+            </div>
+
+            <div class="control-group">
+                <label>Textplacering:</label>
+                <select id="textPlacementMode" onchange="updateTextContent()">
+                    <option value="free">Fritt flyttbar (Dra med musen/fingret)</option>
+                    <option value="edge">Runt kanten (Böjd text)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Textstorlek: <span id="textSizeVal">16</span>px</label>
+                <input type="range" id="textSizeRange" min="10" max="32" value="16" oninput="updateTextSize(this.value)">
+            </div>
+
+            <hr style="border:0; border-top:1px solid #eee; margin: 15px 0;">
 
             <div class="control-group">
                 <label>Skala bild: <span id="scaleValue">100</span>%</label>
@@ -140,7 +199,7 @@
             <div class="control-group">
                 <label>Marginal från kant: <span id="marginValue">5</span>%</label>
                 <input type="range" id="marginRange" min="0" max="25" value="5" oninput="updateMargin(this.value)">
-                <small style="color: #666;">Döljer loggan utanför den röda streckade linjen.</small>
+                <small style="color: #666;">Döljer logga/element utanför den röda streckade linjen.</small>
             </div>
 
             <hr style="border:0; border-top:1px solid #eee; margin: 20px 0;">
@@ -181,15 +240,23 @@
 
     <script>
         const img = document.getElementById('uploaded-image');
+        const draggableText = document.getElementById('draggable-text');
+        const edgeTextSvg = document.getElementById('edge-text-svg');
+        const edgeTextValue = document.getElementById('edgeTextValue');
         const marginLine = document.getElementById('margin-line');
         const marginMask = document.getElementById('margin-mask');
         const marker = document.getElementById('marker');
+        
         let savedImageData = null;
         let originalFile = null; 
-        let isDragging = false;
-        let currentX = 0, currentY = 0, initialX = 0, initialY = 0;
-        let xOffset = 0;
-        let yOffset = 0;
+
+        // Bild-tracking
+        let isDraggingImg = false;
+        let imgXOffset = 0, imgYOffset = 0, imgInitX = 0, imgInitY = 0;
+
+        // Text-tracking (för fri text)
+        let isDraggingText = false;
+        let textXOffset = 0, textYOffset = 0, textInitX = 0, textInitY = 0;
 
         window.onload = function() {
             updateMargin(5);
@@ -214,25 +281,56 @@
                     savedImageData = e.target.result;
                     img.src = savedImageData;
                     img.style.display = 'block';
-                    resetPosition();
+                    resetImagePosition();
                 }
                 reader.readAsDataURL(file);
             }
         }
 
-        function resetPosition() {
+        function resetImagePosition() {
             document.getElementById('scaleRange').value = 100;
             document.getElementById('scaleValue').innerText = 100;
             img.style.width = '100%';
-            xOffset = 0;
-            yOffset = 0;
-            updateTransform();
+            imgXOffset = 0;
+            imgYOffset = 0;
+            updateImgTransform();
         }
 
         function scaleImage(val) {
             document.getElementById('scaleValue').innerText = val;
             img.style.width = val + '%';
-            updateTransform();
+            updateImgTransform();
+        }
+
+        function updateImgTransform() {
+            img.style.transform = `translate(-50%, -50%) translate3d(${imgXOffset}px, ${imgYOffset}px, 0)`;
+        }
+
+        function updateTextSize(val) {
+            document.getElementById('textSizeVal').innerText = val;
+            draggableText.style.fontSize = val + 'px';
+            edgeTextSvg.querySelector('text').setAttribute('font-size', val);
+        }
+
+        function updateTextContent() {
+            const textVal = document.getElementById('customTextInput').value;
+            const mode = document.getElementById('textPlacementMode').value;
+
+            if (!textVal.trim()) {
+                draggableText.style.display = 'none';
+                edgeTextSvg.style.display = 'none';
+                return;
+            }
+
+            if (mode === 'free') {
+                draggableText.innerText = textVal;
+                draggableText.style.display = 'block';
+                edgeTextSvg.style.display = 'none';
+            } else {
+                edgeTextValue.textContent = textVal;
+                edgeTextSvg.style.display = 'block';
+                draggableText.style.display = 'none';
+            }
         }
 
         function updateMargin(val) {
@@ -256,58 +354,65 @@
             marginMask.style.border = `${marginPx}px solid ${bgColor}`;
         }
 
-        function updateTransform() {
-            img.style.transform = `translate(-50%, -50%) translate3d(${xOffset}px, ${yOffset}px, 0)`;
-        }
+        // --- Händelsehanterare för Drag & Drop (Bild & Text separat) ---
+        
+        // Bild-lyssnare
+        img.addEventListener("mousedown", (e) => startDrag(e, 'img'), false);
+        img.addEventListener("touchstart", (e) => startDrag(e, 'img'), false);
 
-        // Drag & Drop
-        img.addEventListener("mousedown", dragStart, false);
-        window.addEventListener("mouseup", dragEnd, false);
-        window.addEventListener("mousemove", drag, false);
-        img.addEventListener("touchstart", dragStart, false);
-        window.addEventListener("touchend", dragEnd, false);
-        window.addEventListener("touchmove", drag, false);
+        // Text-lyssnare
+        draggableText.addEventListener("mousedown", (e) => startDrag(e, 'text'), false);
+        draggableText.addEventListener("touchstart", (e) => startDrag(e, 'text'), false);
 
-        function dragStart(e) {
-            if (e.type === "touchstart") {
-                initialX = e.touches[0].clientX - xOffset;
-                initialY = e.touches[0].clientY - yOffset;
-            } else {
-                initialX = e.clientX - xOffset;
-                initialY = e.clientY - yOffset;
+        window.addEventListener("mouseup", endDrag, false);
+        window.addEventListener("touchend", endDrag, false);
+        window.addEventListener("mousemove", dragMove, false);
+        window.addEventListener("touchmove", dragMove, false);
+
+        let activeTarget = null;
+
+        function startDrag(e, targetType) {
+            activeTarget = targetType;
+            const clientX = e.type === "touchstart" ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type === "touchstart" ? e.touches[0].clientY : e.clientY;
+
+            if (targetType === 'img') {
+                isDraggingImg = true;
+                imgInitX = clientX - imgXOffset;
+                imgInitY = clientY - imgYOffset;
+            } else if (targetType === 'text') {
+                isDraggingText = true;
+                textInitX = clientX - textXOffset;
+                textInitY = clientY - textYOffset;
             }
-            if (e.target === img) isDragging = true;
         }
 
-        function dragEnd() {
-            initialX = currentX;
-            initialY = currentY;
-            isDragging = false;
+        function endDrag() {
+            isDraggingImg = false;
+            isDraggingText = false;
+            activeTarget = null;
         }
 
-        function drag(e) {
-            if (isDragging) {
+        function dragMove(e) {
+            const clientX = e.type === "touchmove" ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type === "touchmove" ? e.touches[0].clientY : e.clientY;
+
+            if (isDraggingImg && activeTarget === 'img') {
                 if (e.type === "touchmove") e.preventDefault();
-                if (e.type === "touchmove") {
-                    currentX = e.touches[0].clientX - initialX;
-                    currentY = e.touches[0].clientY - initialY;
-                } else {
-                    currentX = e.clientX - initialX;
-                    currentY = e.clientY - initialY;
-                }
-                xOffset = currentX;
-                yOffset = currentY;
-                updateTransform();
+                imgXOffset = clientX - imgInitX;
+                imgYOffset = clientY - imgInitY;
+                updateImgTransform();
+            } else if (isDraggingText && activeTarget === 'text') {
+                if (e.type === "touchmove") e.preventDefault();
+                textXOffset = clientX - textInitX;
+                textYOffset = clientY - textInitY;
+                draggableText.style.transform = `translate(-50%, -50%) translate3d(${textXOffset}px, ${textYOffset}px, 0)`;
             }
         }
 
+        // --- Export till Canvas och Mail ---
         function handleOrder(event) {
             event.preventDefault();
-
-            if (!savedImageData || img.style.display === 'none') {
-                alert("Vänligen ladda upp en bild först!");
-                return;
-            }
 
             const namn = document.getElementById('namn').value;
             const epost = document.getElementById('epost').value;
@@ -315,6 +420,9 @@
             const skalning = document.getElementById('scaleRange').value + '%';
             const marginal = document.getElementById('marginRange').value + '%';
             const meddelande = document.getElementById('meddelande').value;
+            const customText = document.getElementById('customTextInput').value;
+            const textMode = document.getElementById('textPlacementMode').value;
+            const textSize = parseInt(document.getElementById('textSizeRange').value);
 
             const canvas = document.createElement('canvas');
             const size = 600; 
@@ -322,11 +430,12 @@
             canvas.height = size;
             const ctx = canvas.getContext('2d');
 
-            // Klipp hela canvasen till en perfekt cirkel direkt
+            // 1. Cirkel-klippning
             ctx.beginPath();
             ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
             ctx.clip();
 
+            // 2. Bakgrund
             let bgGrad = ctx.createLinearGradient(0, 0, size, size);
             if (material.includes('Corten')) {
                 bgGrad.addColorStop(0, '#a0522d');
@@ -342,22 +451,51 @@
             ctx.fillStyle = bgGrad;
             ctx.fillRect(0, 0, size, size);
 
-            const exportImg = new Image();
-            exportImg.onload = function() {
-                const markerWidth = marker.offsetWidth; 
-                const scaleFactor = size / markerWidth; 
-                const imgDrawWidth = img.offsetWidth * scaleFactor;
-                const imgDrawHeight = (exportImg.height / exportImg.width) * imgDrawWidth;
-                const imgCenterX = (size / 2) + (xOffset * scaleFactor);
-                const imgCenterY = (size / 2) + (yOffset * scaleFactor);
+            const markerWidth = marker.offsetWidth; 
+            const scaleFactor = size / markerWidth; 
 
-                ctx.save();
-                ctx.filter = 'grayscale(100%) contrast(200%)';
-                ctx.globalCompositeOperation = 'multiply';
-                ctx.globalAlpha = 0.85;
-                ctx.drawImage(exportImg, imgCenterX - (imgDrawWidth / 2), imgCenterY - (imgDrawHeight / 2), imgDrawWidth, imgDrawHeight);
-                ctx.restore();
+            // Funktion för att rita ut själva innehållet när bilden laddats (eller direkt om ingen bild finns)
+            function finishCanvasGeneration() {
+                // 3. Om texten är placerad runt kanten
+                if (customText.trim() && textMode === 'edge') {
+                    ctx.save();
+                    ctx.font = `bold ${textSize * scaleFactor}px sans-serif`;
+                    ctx.fillStyle = '#111';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
 
+                    const radius = (size / 2) - (15 * scaleFactor); // Avstånd från kanten
+                    const characters = customText.split('');
+                    const angleStep = Math.PI / (characters.length + 1);
+
+                    ctx.translate(size / 2, size / 2);
+                    ctx.rotate(-Math.PI / 2); // Starta upptill
+
+                    characters.forEach((char, i) => {
+                        ctx.save();
+                        const angle = (i - characters.length / 2 + 0.5) * angleStep * 0.9;
+                        ctx.rotate(angle);
+                        ctx.translate(0, -radius);
+                        ctx.fillText(char, 0, 0);
+                        ctx.restore();
+                    });
+                    ctx.restore();
+                }
+
+                // 4. Om texten är fritt flyttbar
+                if (customText.trim() && textMode === 'free') {
+                    ctx.save();
+                    ctx.font = `bold ${textSize * scaleFactor}px sans-serif`;
+                    ctx.fillStyle = '#111';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    const textCanvasX = (size / 2) + (textXOffset * scaleFactor);
+                    const textCanvasY = (size / 2) + (textYOffset * scaleFactor);
+                    ctx.fillText(customText, textCanvasX, textCanvasY);
+                    ctx.restore();
+                }
+
+                // 5. Marginal-masken (tcker ytterkant)
                 const marginPercent = parseInt(document.getElementById('marginRange').value);
                 if (marginPercent > 0) {
                     const marginPxScreen = (marginPercent / 100) * (markerWidth / 2);
@@ -371,6 +509,7 @@
                     ctx.fill();
                 }
 
+                // Nedladdning
                 const link1 = document.createElement('a');
                 link1.download = 'ballmarker-designforstag.png';
                 link1.href = canvas.toDataURL('image/png');
@@ -397,15 +536,38 @@
                         "E-post: " + epost + "\n" +
                         "Material: " + material + "\n" +
                         "Skalning: " + skalning + "\n" +
-                        "Marginal från kant: " + marginal + "\n\n" +
+                        "Marginal från kant: " + marginal + "\n" +
+                        "Infogad text: " + (customText || "Ingen") + "\n\n" +
                         "Meddelande:\n" + meddelande + "\n\n" +
-                        "OBS: Jag har bifogat bilderna ('ballmarker-designforstag.png' och min originalbild) till detta meddelande."
+                        "OBS: Jag har bifogat bilderna till detta meddelande."
                     );
 
                     window.location.href = `mailto:bilger.christian@gmail.com?subject=${emailSubject}&body=${emailBody}`;
                 }, 1000);
-            };
-            exportImg.src = savedImageData;
+            }
+
+            // Rita bild om den finns, annars kör direkt
+            if (savedImageData && img.style.display !== 'none') {
+                const exportImg = new Image();
+                exportImg.onload = function() {
+                    const imgDrawWidth = img.offsetWidth * scaleFactor;
+                    const imgDrawHeight = (exportImg.height / exportImg.width) * imgDrawWidth;
+                    const imgCenterX = (size / 2) + (imgXOffset * scaleFactor);
+                    const imgCenterY = (size / 2) + (imgYOffset * scaleFactor);
+
+                    ctx.save();
+                    ctx.filter = 'grayscale(100%) contrast(200%)';
+                    ctx.globalCompositeOperation = 'multiply';
+                    ctx.globalAlpha = 0.85;
+                    ctx.drawImage(exportImg, imgCenterX - (imgDrawWidth / 2), imgCenterY - (imgDrawHeight / 2), imgDrawWidth, imgDrawHeight);
+                    ctx.restore();
+
+                    finishCanvasGeneration();
+                };
+                exportImg.src = savedImageData;
+            } else {
+                finishCanvasGeneration();
+            }
         }
     </script>
 
