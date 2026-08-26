@@ -136,6 +136,7 @@
             <div id="draggable-text"></div>
             
             <svg id="edge-text-svg" viewBox="0 0 200 200">
+                <!-- Sökväg som ligger nära toppen av cirkeln (radie ~75) -->
                 <path id="textPathTop" d="M 25,100 A 75,75 0 1,1 175,100" fill="none" />
                 <text font-weight="bold" fill="#111" text-anchor="middle">
                     <textPath href="#textPathTop" startOffset="50%" id="edgeTextValue"></textPath>
@@ -266,7 +267,7 @@
 
     <footer>
         &copy; 2026 CBT AB. Alla rättigheter reserverade. <br>
-        <span style="font-size: 11px; color: #aaa;">Version 1.4</span>
+        <span style="font-size: 11px; color: #aaa;">Version 1.6</span>
     </footer>
 
     <script>
@@ -444,7 +445,6 @@
             }
         }
 
-        // Hjälpfunktion för läsbara namn på typsnitt i mailet
         function getReadableFontName(fontValue) {
             if (fontValue.includes('Great Vibes')) return 'Elegant Handstil (Script)';
             if (fontValue.includes('Georgia')) return 'Klassisk (Serif)';
@@ -460,7 +460,9 @@
             const material = document.getElementById('materialSelect').value;
             const skalning = document.getElementById('scaleRange').value + '%';
             const marginal = document.getElementById('marginRange').value + '%';
-            const meddelande = document.getElementById('meddelande').value;
+            
+            // Fixat syntaxfelet för meddelande-rutan:
+            const meddelande = document.getElementById('meddelande').value || '';
             
             const edgeText = document.getElementById('edgeTextInput').value;
             const freeText = document.getElementById('freeTextInput').value;
@@ -503,49 +505,8 @@
 
             function finishCanvasGeneration() {
                 const proceedWithTexts = () => {
-                    // 1. RITA UT KANTTEXT (Korrigerad radie och vinkelberäkning för 600px canvas)
-                    if (edgeText.trim()) {
-                        ctx.save();
-                        const scaledFontSize = edgeSize * scaleFactor;
-                        ctx.font = `bold ${scaledFontSize}px ${edgeFontVal}`;
-                        ctx.fillStyle = '#111';
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-
-                        const radius = (size / 2) - (28 * scaleFactor); // Korrekt avstånd från kanten
-                        const characters = edgeText.split('');
-                        
-                        const angleStep = (scaledFontSize * 0.58) / radius; 
-                        const totalArcAngle = characters.length * angleStep;
-
-                        ctx.translate(size / 2, size / 2);
-                        ctx.rotate(-totalArcAngle / 2 + angleStep / 2);
-
-                        characters.forEach((char) => {
-                            ctx.save();
-                            ctx.translate(0, -radius);
-                            ctx.rotate(Math.PI); 
-                            ctx.fillText(char, 0, 0);
-                            ctx.restore();
-                            ctx.rotate(angleStep);
-                        });
-                        ctx.restore();
-                    }
-
-                    // 2. RITA UT MITTEN-TEXT
-                    if (freeText.trim()) {
-                        ctx.save();
-                        ctx.font = `bold ${freeSize * scaleFactor}px ${freeFontVal}`;
-                        ctx.fillStyle = '#111';
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        const textCanvasX = (size / 2) + (textXOffset * scaleFactor);
-                        const textCanvasY = (size / 2) + (textYOffset * scaleFactor);
-                        ctx.fillText(freeText, textCanvasX, textCanvasY);
-                        ctx.restore();
-                    }
-
-                    // 3. RITA UT MARGINAL-MASK (döljer utanför marginal)
+                    
+                    // 1. RITA UT MARGINAL-MASK FÖRST (Döljer bilden men ligger under texterna)
                     const marginPercent = parseInt(document.getElementById('marginRange').value);
                     if (marginPercent > 0) {
                         const marginPxScreen = (marginPercent / 100) * (markerWidth / 2);
@@ -557,6 +518,60 @@
                         ctx.arc(size / 2, size / 2, innerRadius, 0, Math.PI * 2, true);
                         ctx.fillStyle = bgGrad;
                         ctx.fill();
+                    }
+
+                    // 2. RITA UT KANTTEXT ÖVERST (Finslipad rotation och placering)
+                    if (edgeText.trim()) {
+                        ctx.save();
+                        const scaledFontSize = edgeSize * scaleFactor;
+                        ctx.font = `bold ${scaledFontSize}px ${edgeFontVal}`;
+                        ctx.fillStyle = '#111';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+
+                        const radius = (size / 2) - (24 * scaleFactor); 
+                        const chars = edgeText.split('');
+                        
+                        // Beräkna total vinkel (radians) texten kommer ta upp
+                        let totalAngle = 0;
+                        chars.forEach(c => totalAngle += ctx.measureText(c).width / radius);
+
+                        // Startvinkel: -90 grader är rakt upp (klockan 12 i canvas), minus hälften av textens längd
+                        let currentAngle = (-Math.PI / 2) - (totalAngle / 2);
+
+                        chars.forEach((char) => {
+                            const charWidth = ctx.measureText(char).width;
+                            const angleSlice = charWidth / radius;
+                            
+                            // Flytta till mitten av bokstaven
+                            currentAngle += angleSlice / 2;
+
+                            ctx.save();
+                            ctx.translate(size / 2, size / 2); // Utgå från mitten
+                            ctx.rotate(currentAngle);          // Rotera vinkeln
+                            ctx.translate(radius, 0);          // Flytta ut till radien
+                            ctx.rotate(Math.PI / 2);           // Rotera tecknet 90 grader så det står upprätt mot kanten
+                            
+                            ctx.fillText(char, 0, 0);
+                            ctx.restore();
+
+                            // Addera andra halvan av tecknets vinkel innan nästa loop
+                            currentAngle += angleSlice / 2;
+                        });
+                        ctx.restore();
+                    }
+
+                    // 3. RITA UT MITTEN-TEXT ÖVERST
+                    if (freeText.trim()) {
+                        ctx.save();
+                        ctx.font = `bold ${freeSize * scaleFactor}px ${freeFontVal}`;
+                        ctx.fillStyle = '#111';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        const textCanvasX = (size / 2) + (textXOffset * scaleFactor);
+                        const textCanvasY = (size / 2) + (textYOffset * scaleFactor);
+                        ctx.fillText(freeText, textCanvasX, textCanvasY);
+                        ctx.restore();
                     }
 
                     // Ladda ner canvas-bilden
