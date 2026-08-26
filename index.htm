@@ -126,7 +126,7 @@
 <body>
 
     <h1>CBT AB - Designa din Ballmarker</h1>
-    <p>Välj material, ladda upp logga/text, anpassa och skicka din förfrågan!</p>
+    <p>Välj material, lägg till text, ladda upp logga, anpassa och skicka din förfrågan!</p>
 
     <div id="marker-container">
         <div id="marker">
@@ -163,30 +163,26 @@
                 </select>
             </div>
 
-            <div class="control-group">
-                <label>Ladda upp logga/bild (valfritt om enbart text):</label>
-                <input type="file" id="imageUpload" accept="image/*" onchange="handleImageUpload(event)">
-            </div>
-
-            <hr style="border:0; border-top:1px solid #eee; margin: 15px 0;">
-
-            <!-- Textinställningar -->
-            <div class="control-group">
-                <label>Infoga text:</label>
-                <input type="text" id="customTextInput" placeholder="T.ex. KLUBBMÄSTARE 2026" oninput="updateTextContent()">
-            </div>
-
-            <div class="control-group">
-                <label>Textplacering:</label>
-                <select id="textPlacementMode" onchange="updateTextContent()">
+            <!-- NYTT: Tydligt textfält direkt i formuläret -->
+            <div class="control-group" style="background: #fdf8e2; padding: 12px; border-radius: 6px; border: 1px solid #f9e79f;">
+                <label style="color: #b7950b;">✨ Infoga egen text (valfritt):</label>
+                <input type="text" id="customTextInput" placeholder="T.ex. KLUBBMÄSTARE 2026" oninput="updateTextContent()" style="margin-bottom: 8px; background: white;">
+                
+                <label style="font-size: 13px; font-weight: normal; margin-bottom: 3px;">Textplacering:</label>
+                <select id="textPlacementMode" onchange="updateTextContent()" style="background: white;">
                     <option value="free">Fritt flyttbar (Dra med musen/fingret)</option>
                     <option value="edge">Runt kanten (Böjd text)</option>
                 </select>
+
+                <div style="margin-top: 8px;">
+                    <label style="font-size: 13px; font-weight: normal; margin-bottom: 3px;">Textstorlek: <span id="textSizeVal">16</span>px</label>
+                    <input type="range" id="textSizeRange" min="10" max="32" value="16" oninput="updateTextSize(this.value)">
+                </div>
             </div>
 
             <div class="control-group">
-                <label>Textstorlek: <span id="textSizeVal">16</span>px</label>
-                <input type="range" id="textSizeRange" min="10" max="32" value="16" oninput="updateTextSize(this.value)">
+                <label>Ladda upp logga/bild (valfritt):</label>
+                <input type="file" id="imageUpload" accept="image/*" onchange="handleImageUpload(event)">
             </div>
 
             <hr style="border:0; border-top:1px solid #eee; margin: 15px 0;">
@@ -250,11 +246,9 @@
         let savedImageData = null;
         let originalFile = null; 
 
-        // Bild-tracking
         let isDraggingImg = false;
         let imgXOffset = 0, imgYOffset = 0, imgInitX = 0, imgInitY = 0;
 
-        // Text-tracking (för fri text)
         let isDraggingText = false;
         let textXOffset = 0, textYOffset = 0, textInitX = 0, textInitY = 0;
 
@@ -354,13 +348,9 @@
             marginMask.style.border = `${marginPx}px solid ${bgColor}`;
         }
 
-        // --- Händelsehanterare för Drag & Drop (Bild & Text separat) ---
-        
-        // Bild-lyssnare
         img.addEventListener("mousedown", (e) => startDrag(e, 'img'), false);
         img.addEventListener("touchstart", (e) => startDrag(e, 'img'), false);
 
-        // Text-lyssnare
         draggableText.addEventListener("mousedown", (e) => startDrag(e, 'text'), false);
         draggableText.addEventListener("touchstart", (e) => startDrag(e, 'text'), false);
 
@@ -410,7 +400,6 @@
             }
         }
 
-        // --- Export till Canvas och Mail ---
         function handleOrder(event) {
             event.preventDefault();
 
@@ -430,12 +419,10 @@
             canvas.height = size;
             const ctx = canvas.getContext('2d');
 
-            // 1. Cirkel-klippning
             ctx.beginPath();
             ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
             ctx.clip();
 
-            // 2. Bakgrund
             let bgGrad = ctx.createLinearGradient(0, 0, size, size);
             if (material.includes('Corten')) {
                 bgGrad.addColorStop(0, '#a0522d');
@@ -454,9 +441,7 @@
             const markerWidth = marker.offsetWidth; 
             const scaleFactor = size / markerWidth; 
 
-            // Funktion för att rita ut själva innehållet när bilden laddats (eller direkt om ingen bild finns)
             function finishCanvasGeneration() {
-                // 3. Om texten är placerad runt kanten
                 if (customText.trim() && textMode === 'edge') {
                     ctx.save();
                     ctx.font = `bold ${textSize * scaleFactor}px sans-serif`;
@@ -464,12 +449,12 @@
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
 
-                    const radius = (size / 2) - (15 * scaleFactor); // Avstånd från kanten
+                    const radius = (size / 2) - (15 * scaleFactor);
                     const characters = customText.split('');
                     const angleStep = Math.PI / (characters.length + 1);
 
                     ctx.translate(size / 2, size / 2);
-                    ctx.rotate(-Math.PI / 2); // Starta upptill
+                    ctx.rotate(-Math.PI / 2);
 
                     characters.forEach((char, i) => {
                         ctx.save();
@@ -482,7 +467,6 @@
                     ctx.restore();
                 }
 
-                // 4. Om texten är fritt flyttbar
                 if (customText.trim() && textMode === 'free') {
                     ctx.save();
                     ctx.font = `bold ${textSize * scaleFactor}px sans-serif`;
@@ -495,7 +479,6 @@
                     ctx.restore();
                 }
 
-                // 5. Marginal-masken (tcker ytterkant)
                 const marginPercent = parseInt(document.getElementById('marginRange').value);
                 if (marginPercent > 0) {
                     const marginPxScreen = (marginPercent / 100) * (markerWidth / 2);
@@ -509,7 +492,6 @@
                     ctx.fill();
                 }
 
-                // Nedladdning
                 const link1 = document.createElement('a');
                 link1.download = 'ballmarker-designforstag.png';
                 link1.href = canvas.toDataURL('image/png');
@@ -546,7 +528,6 @@
                 }, 1000);
             }
 
-            // Rita bild om den finns, annars kör direkt
             if (savedImageData && img.style.display !== 'none') {
                 const exportImg = new Image();
                 exportImg.onload = function() {
