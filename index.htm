@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Designa din ballmarker - CBT AB</title>
-    <!-- Importera elegant handstil (Great Vibes) som matchar önskemålet -->
+    <!-- Importera elegant handstil (Great Vibes) -->
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
     <style>
         body { font-family: sans-serif; text-align: center; background: #f4f4f4; padding: 20px; color: #333; }
@@ -228,6 +228,7 @@
 
             <div class="control-group">
                 <label>Marginal från kant: <span id="marginValue">5</span>%</label>
+                <!-- Ändrad till max 35 här nedan -->
                 <input type="range" id="marginRange" min="0" max="35" value="5" oninput="updateMargin(this.value)">
                 <small style="color: #666;">Döljer logga/element utanför den röda streckade linjen (nu upp till 35%).</small>
             </div>
@@ -497,7 +498,8 @@
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
 
-                    const radius = (size / 2) - (15 * scaleFactor);
+                    const marginPercent = parseInt(document.getElementById('marginRange').value);
+                    const radius = (size / 2) - ((15 + (marginPercent * 0.4)) * scaleFactor);
                     const characters = edgeText.split('');
                     const angleStep = Math.PI / (characters.length + 1);
 
