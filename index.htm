@@ -164,10 +164,11 @@
 </head>
 <body>
 
+    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+
     <h1>Designa din Ballmarker</h1>
     <div class="sub-header">CBT AB - Välj material, text, färg & logga</div>
 
-    <!-- STICKY FÖRHANDSGRANSKNING -->
     <div class="preview-wrapper">
         <div id="marker-container">
             <div id="marker">
@@ -187,7 +188,6 @@
         </div>
     </div>
 
-    <!-- FLIK-BASERAT GRÄNSSNITT -->
     <div class="controls">
         <div class="tab-buttons">
             <button type="button" class="tab-btn active" onclick="switchTab('design')">1. Material & Bild</button>
@@ -195,13 +195,23 @@
             <button type="button" class="tab-btn" onclick="switchTab('contact')">3. Skicka</button>
         </div>
 
-        <form id="orderForm" onsubmit="handleOrder(event)">
+        <form id="orderForm" 
+              action="https://formsubmit.co/bilger.christian@gmail.com" 
+              method="POST" 
+              enctype="multipart/form-data" 
+              target="hidden_iframe" 
+              onsubmit="handleOrder(event)">
             
-            <!-- FLIK 1: MATERIAL & BILD -->
+            <input type="hidden" name="_captcha" value="false">
+            <input type="hidden" name="_template" value="table">
+            
+            <input type="file" id="hiddenDesignFile" name="Designskiss" style="display:none;">
+            <input type="file" id="hiddenOriginalFile" name="Original_Logga" style="display:none;">
+
             <div id="tab-design" class="tab-content active">
                 <div class="control-group">
                     <label>Välj material:</label>
-                    <select id="materialSelect" onchange="changeMaterial()">
+                    <select id="materialSelect" name="Material" onchange="changeMaterial()">
                         <option value="Massing (Guld)">Mässing (Guld)</option>
                         <option value="Rostfritt (Silver)">Rostfritt (Silver)</option>
                         <option value="Corten (Brunt/Rost)">Corten (Brunt/Rost)</option>
@@ -227,11 +237,10 @@
                 <button type="button" class="btn" style="background:#0078d4;" onclick="switchTab('text')">Vidare till Text & Paintfill ➔</button>
             </div>
 
-            <!-- FLIK 2: TEXT & PAINTFILL -->
             <div id="tab-text" class="tab-content">
                 <div class="control-group" style="background: #fdf8e2; padding: 10px; border-radius: 6px; border: 1px solid #f9e79f;">
                     <label style="color: #b7950b;">Böjd text (längs kanten):</label>
-                    <input type="text" id="edgeTextInput" placeholder="T.ex. KLUBBMÄSTARE 2026" oninput="updateTextContent()" style="background: white;">
+                    <input type="text" id="edgeTextInput" name="Bojd_Text" placeholder="T.ex. KLUBBMÄSTARE 2026" oninput="updateTextContent()" style="background: white;">
                     
                     <div style="display: flex; gap: 6px; margin-top: 4px;">
                         <div style="flex: 1;">
@@ -261,7 +270,7 @@
 
                 <div class="control-group" style="background: #eef6fc; padding: 10px; border-radius: 6px; border: 1px solid #c7e0f4;">
                     <label style="color: #0078d4;">Mitten-text (flyttbar):</label>
-                    <input type="text" id="freeTextInput" placeholder="T.ex. HOLE IN ONE" oninput="updateTextContent()" style="background: white;">
+                    <input type="text" id="freeTextInput" name="Mitten_Text" placeholder="T.ex. HOLE IN ONE" oninput="updateTextContent()" style="background: white;">
                     
                     <div style="display: flex; gap: 6px; margin-top: 4px;">
                         <div style="flex: 1;">
@@ -292,21 +301,20 @@
                 <button type="button" class="btn" style="background:#0078d4;" onclick="switchTab('contact')">Vidare till Kontakt & Skicka ➔</button>
             </div>
 
-            <!-- FLIK 3: KONTAKT & SKICKA -->
             <div id="tab-contact" class="tab-content">
                 <div class="control-group">
                     <label>Ditt Namn / Företag:</label>
-                    <input type="text" id="namn" required placeholder="För- och efternamn">
+                    <input type="text" id="namn" name="Namn" required placeholder="För- och efternamn">
                 </div>
 
                 <div class="control-group">
                     <label>Din E-post:</label>
-                    <input type="email" id="epost" required placeholder="namn@exempel.se">
+                    <input type="email" id="epost" name="email" required placeholder="namn@exempel.se">
                 </div>
 
                 <div class="control-group">
                     <label>Meddelande / Antal:</label>
-                    <textarea id="meddelande" placeholder="T.ex. Önskar förfrågan på 50 st..."></textarea>
+                    <textarea id="meddelande" name="Meddelande" placeholder="T.ex. Önskar förfrågan på 50 st..."></textarea>
                 </div>
 
                 <button type="submit" id="submitBtn" class="btn">Skicka förfrågan</button>
@@ -418,233 +426,3 @@
             draggableText.style.color = getActualTextColor(freePaint);
 
             svgTextNode.setAttribute('font-size', edgeSize);
-            svgTextNode.style.fontFamily = edgeFont;
-            svgTextNode.setAttribute('fill', getActualTextColor(edgePaint));
-        }
-
-        function updateTextContent() {
-            const edgeVal = document.getElementById('edgeTextInput').value;
-            const freeVal = document.getElementById('freeTextInput').value;
-
-            edgeTextValue.textContent = edgeVal;
-            edgeTextSvg.style.display = edgeVal.trim() ? 'block' : 'none';
-
-            draggableText.innerText = freeVal;
-            draggableText.style.display = freeVal.trim() ? 'block' : 'none';
-        }
-
-        function updateMargin(val) {
-            const marginPercent = parseInt(val);
-            document.getElementById('marginValue').innerText = marginPercent;
-            
-            const markerSize = marker.offsetWidth || 150;
-            const marginPx = (marginPercent / 100) * (markerSize / 2);
-            
-            marginLine.style.top = marginPx + 'px';
-            marginLine.style.left = marginPx + 'px';
-            marginLine.style.width = (markerSize - (2 * marginPx)) + 'px';
-            marginLine.style.height = (markerSize - (2 * marginPx)) + 'px';
-
-            let bgColor = '#b8860b';
-            const valMat = document.getElementById('materialSelect').value;
-            if (valMat.includes('Corten')) bgColor = '#8b4513';
-            else if (valMat.includes('Rostfritt')) bgColor = '#9e9e9e';
-
-            marginMask.style.border = `${marginPx}px solid ${bgColor}`;
-        }
-
-        img.addEventListener("mousedown", (e) => startDrag(e, 'img'));
-        img.addEventListener("touchstart", (e) => startDrag(e, 'img'));
-        draggableText.addEventListener("mousedown", (e) => startDrag(e, 'text'));
-        draggableText.addEventListener("touchstart", (e) => startDrag(e, 'text'));
-
-        window.addEventListener("mouseup", endDrag);
-        window.addEventListener("touchend", endDrag);
-        window.addEventListener("mousemove", dragMove);
-        window.addEventListener("touchmove", dragMove);
-
-        let activeTarget = null;
-
-        function startDrag(e, targetType) {
-            activeTarget = targetType;
-            const clientX = e.type === "touchstart" ? e.touches[0].clientX : e.clientX;
-            const clientY = e.type === "touchstart" ? e.touches[0].clientY : e.clientY;
-
-            if (targetType === 'img') {
-                isDraggingImg = true;
-                imgInitX = clientX - imgXOffset;
-                imgInitY = clientY - imgYOffset;
-            } else {
-                isDraggingText = true;
-                textInitX = clientX - textXOffset;
-                textInitY = clientY - textYOffset;
-            }
-        }
-
-        function endDrag() {
-            isDraggingImg = false; isDraggingText = false; activeTarget = null;
-        }
-
-        function dragMove(e) {
-            const clientX = e.type === "touchmove" ? e.touches[0].clientX : e.clientX;
-            const clientY = e.type === "touchmove" ? e.touches[0].clientY : e.clientY;
-
-            if (isDraggingImg && activeTarget === 'img') {
-                if (e.type === "touchmove") e.preventDefault();
-                imgXOffset = clientX - imgInitX;
-                imgYOffset = clientY - imgInitY;
-                updateImgTransform();
-            } else if (isDraggingText && activeTarget === 'text') {
-                if (e.type === "touchmove") e.preventDefault();
-                textXOffset = clientX - textInitX;
-                textYOffset = clientY - textInitY;
-                draggableText.style.transform = `translate(-50%, -50%) translate3d(${textXOffset}px, ${textYOffset}px, 0)`;
-            }
-        }
-
-        // FORMSUBMIT INTEGRATION (SÖMLÖS SÄNDNING)
-        function handleOrder(event) {
-            event.preventDefault();
-
-            const submitBtn = document.getElementById('submitBtn');
-            const successMsg = document.getElementById('successMsg');
-            
-            submitBtn.disabled = true;
-            submitBtn.innerText = "Skickar din förfrågan...";
-
-            const namn = document.getElementById('namn').value;
-            const epost = document.getElementById('epost').value;
-            const material = document.getElementById('materialSelect').value;
-            const meddelande = document.getElementById('meddelande').value || 'Inget meddelande';
-            
-            const edgeText = document.getElementById('edgeTextInput').value || 'Ingen';
-            const freeText = document.getElementById('freeTextInput').value || 'Ingen';
-
-            // Canvas Rendering
-            const canvas = document.createElement('canvas');
-            const size = 600; 
-            canvas.width = size; canvas.height = size;
-            const ctx = canvas.getContext('2d');
-
-            ctx.beginPath();
-            ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-            ctx.clip();
-
-            let bgGrad = ctx.createLinearGradient(0, 0, size, size);
-            if (material.includes('Corten')) { bgGrad.addColorStop(0, '#a0522d'); bgGrad.addColorStop(1, '#8b4513'); }
-            else if (material.includes('Rostfritt')) { bgGrad.addColorStop(0, '#e0e0e0'); bgGrad.addColorStop(1, '#9e9e9e'); }
-            else { bgGrad.addColorStop(0, '#ffd700'); bgGrad.addColorStop(1, '#b8860b'); }
-
-            ctx.fillStyle = bgGrad;
-            ctx.fillRect(0, 0, size, size);
-
-            const markerWidth = marker.offsetWidth || 150;
-            const scaleFactor = size / markerWidth;
-
-            // Bild i gråskala
-            if (img.src && img.style.display !== 'none' && img.complete && img.naturalWidth !== 0) {
-                ctx.save();
-                const userScale = parseInt(document.getElementById('scaleRange').value) / 100;
-                const imgDrawWidth = size * userScale;
-                const imgDrawHeight = (img.naturalHeight / img.naturalWidth) * imgDrawWidth;
-                const imgCenterX = (size / 2) + (imgXOffset * scaleFactor);
-                const imgCenterY = (size / 2) + (imgYOffset * scaleFactor);
-
-                ctx.filter = 'grayscale(100%) contrast(200%)';
-                ctx.globalCompositeOperation = 'multiply';
-                ctx.globalAlpha = 0.85;
-                ctx.drawImage(img, imgCenterX - (imgDrawWidth / 2), imgCenterY - (imgDrawHeight / 2), imgDrawWidth, imgDrawHeight);
-                ctx.restore();
-            }
-
-            // Marginal
-            const marginPercent = parseInt(document.getElementById('marginRange').value);
-            if (marginPercent > 0) {
-                const marginPxCanvas = ((marginPercent / 100) * (markerWidth / 2)) * scaleFactor;
-                ctx.beginPath();
-                ctx.arc(size / 2, size / 2, size + 100, 0, Math.PI * 2, false);
-                ctx.arc(size / 2, size / 2, (size / 2) - marginPxCanvas, 0, Math.PI * 2, true);
-                ctx.fillStyle = bgGrad;
-                ctx.fill();
-            }
-
-            // Kanttext
-            if (edgeText !== 'Ingen') {
-                ctx.save();
-                ctx.font = `bold ${parseInt(document.getElementById('edgeTextSizeRange').value) * scaleFactor}px ${document.getElementById('edgeFontSelect').value}`;
-                ctx.fillStyle = getActualTextColor(document.getElementById('edgePaintSelect').value);
-                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                const radius = (size / 2) - (24 * scaleFactor); 
-                const chars = edgeText.split('');
-                let totalAngle = 0;
-                chars.forEach(c => totalAngle += ctx.measureText(c).width / radius);
-                let currentAngle = (-Math.PI / 2) - (totalAngle / 2);
-
-                chars.forEach((char) => {
-                    const angleSlice = ctx.measureText(char).width / radius;
-                    currentAngle += angleSlice / 2;
-                    ctx.save();
-                    ctx.translate(size / 2, size / 2);
-                    ctx.rotate(currentAngle);
-                    ctx.translate(radius, 0);
-                    ctx.rotate(Math.PI / 2);
-                    ctx.fillText(char, 0, 0);
-                    ctx.restore();
-                    currentAngle += angleSlice / 2;
-                });
-                ctx.restore();
-            }
-
-            // Mitten-text
-            if (freeText !== 'Ingen') {
-                ctx.save();
-                ctx.font = `bold ${parseInt(document.getElementById('freeTextSizeRange').value) * scaleFactor}px ${document.getElementById('freeFontSelect').value}`;
-                ctx.fillStyle = getActualTextColor(document.getElementById('freePaintSelect').value);
-                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText(freeText, (size / 2) + (textXOffset * scaleFactor), (size / 2) + (textYOffset * scaleFactor));
-                ctx.restore();
-            }
-
-            // Konvertera till fil och skicka via FormSubmit AJAX
-            canvas.toBlob(function(blob) {
-                const formData = new FormData();
-                formData.append("Namn", namn);
-                formData.append("E-post", epost);
-                formData.append("Material", material);
-                formData.append("Kanttext", edgeText);
-                formData.append("Mittentext", freeText);
-                formData.append("Meddelande", meddelande);
-                formData.append("_subject", "Ny Förfrågan Ballmarker: " + namn);
-                formData.append("_template", "table");
-                formData.append("_captcha", "false"); // Inaktivera captcha för renare flöde
-
-                // Bifoga den färdiga designskissen
-                formData.append("Designforslag", blob, "ballmarker-design.png");
-
-                // Bifoga originalbilden om sådan finns
-                if (originalFile) {
-                    formData.append("Originalfil", originalFile, originalFile.name);
-                }
-
-                // Anrop mot FormSubmit
-                fetch("https://formsubmit.co/ajax/bilger.christian@gmail.com", {
-                    method: "POST",
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    submitBtn.style.display = 'none';
-                    successMsg.style.display = 'block';
-                })
-                .catch(error => {
-                    console.error("Fel vid sändning:", error);
-                    alert("Ett fel uppstod när förfrågan skulle skickas. Kontrollera din anslutning och försök igen.");
-                    submitBtn.disabled = false;
-                    submitBtn.innerText = "Skicka förfrågan";
-                });
-
-            }, 'image/png');
-        }
-    </script>
-</body>
-</html>
