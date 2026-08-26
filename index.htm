@@ -346,7 +346,7 @@
             
             document.getElementById('tab-' + tabId).classList.add('active');
             
-            // Hitta rätt knapp att marker som aktiv
+            // Hitta rätt knapp att markera som aktiv
             const btns = document.querySelectorAll('.tab-btn');
             if (tabId === 'design') btns[0].classList.add('active');
             if (tabId === 'text') btns[1].classList.add('active');
@@ -534,7 +534,7 @@
             const markerWidth = marker.offsetWidth || 150;
             const scaleFactor = size / markerWidth;
 
-            // Bild-ritning
+            // Bild-ritning (Nu med riktig gråskala i Canvas för nedladdningen)
             if (img.src && img.style.display !== 'none' && img.complete && img.naturalWidth !== 0) {
                 ctx.save();
                 const userScale = parseInt(document.getElementById('scaleRange').value) / 100;
@@ -543,6 +543,7 @@
                 const imgCenterX = (size / 2) + (imgXOffset * scaleFactor);
                 const imgCenterY = (size / 2) + (imgYOffset * scaleFactor);
 
+                ctx.filter = 'grayscale(100%) contrast(200%)';
                 ctx.globalCompositeOperation = 'multiply';
                 ctx.globalAlpha = 0.85;
                 ctx.drawImage(img, imgCenterX - (imgDrawWidth / 2), imgCenterY - (imgDrawHeight / 2), imgDrawWidth, imgDrawHeight);
@@ -597,27 +598,36 @@
                 ctx.restore();
             }
 
-            // Nedladdningar
-            const link1 = document.createElement('a');
-            link1.download = 'ballmarker-designforstag.png';
-            link1.href = canvas.toDataURL('image/png');
-            link1.click();
+            // Lösning Android & Gråskala: Skapa en Blob istället för Base64-sträng
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const link1 = document.createElement('a');
+                link1.download = 'ballmarker-designforstag.png';
+                link1.href = url;
+                link1.click();
 
-            if (originalFile) {
+                // Ladda ner originalfilen
+                if (originalFile) {
+                    setTimeout(() => {
+                        const link2 = document.createElement('a');
+                        link2.href = URL.createObjectURL(originalFile);
+                        link2.download = originalFile.name;
+                        link2.click();
+                    }, 400);
+                }
+
+                // Öppna mailen
                 setTimeout(() => {
-                    const link2 = document.createElement('a');
-                    link2.href = URL.createObjectURL(originalFile);
-                    link2.download = originalFile.name;
-                    link2.click();
-                }, 400);
-            }
-
-            setTimeout(() => {
-                alert("Bilderna har sparats! Öppnar nu ditt e-postprogram...");
-                const emailSubject = encodeURIComponent("Förfrågan Ballmarker - " + namn);
-                const emailBody = encodeURIComponent("Hej CBT AB!\n\nJag vill beställa ballmarkers.\nNamn: " + namn + "\nE-post: " + epost + "\nMaterial: " + material + "\nMeddelande: " + meddelande);
-                window.location.href = `mailto:bilger.christian@gmail.com?subject=${emailSubject}&body=${emailBody}`;
-            }, 800);
+                    alert("Bilderna har sparats! Öppnar nu ditt e-postprogram...");
+                    const emailSubject = encodeURIComponent("Förfrågan Ballmarker - " + namn);
+                    const emailBody = encodeURIComponent("Hej CBT AB!\n\nJag vill beställa ballmarkers.\nNamn: " + namn + "\nE-post: " + epost + "\nMaterial: " + material + "\nMeddelande: " + meddelande);
+                    window.location.href = `mailto:bilger.christian@gmail.com?subject=${emailSubject}&body=${emailBody}`;
+                    
+                    // Städa upp URL:en från internminnet
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                }, 800);
+                
+            }, 'image/png');
         }
     </script>
 </body>
