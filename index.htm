@@ -101,7 +101,27 @@
             min-height: 20px;
         }
 
-        /* Stil för boxar och knappar */
+        /* Stil för formulär och boxar */
+        .form-group {
+            text-align: left;
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
         .info-box {
             background-color: #ebf3fb;
             border-left: 5px solid #1b75d0;
@@ -167,7 +187,15 @@
             color: #777;
             border-top: 1px solid #ddd;
             padding-top: 15px;
-            line-height: 1.5;
+            line-height: 1.6;
+        }
+        .version-tag {
+            font-family: monospace;
+            background: #e2e8f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #333;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -177,39 +205,73 @@
         <h1>Designa din Ferrule</h1>
         <p>Välj färg i listan och klicka på ringarna för att måla.</p>
 
+        <!-- Färgpalett -->
         <div class="palette" id="palette"></div>
 
+        <!-- Varningstext -->
         <div id="warning-text"></div>
 
+        <!-- Ferrulen -->
         <div class="ferrule-box">
             <div id="ferrule"></div>
         </div>
         <br>
         <span style="font-size: 13px; color: #666; font-weight: bold; display: block; margin-bottom: 20px;">↑ Toppen av klubban (smal, 12mm) | Basen nedåt (bred, 14mm) ↓</span>
 
+        <!-- Info-box -->
         <div class="info-box">
             <strong>Så här gör du för att beställa:</strong><br>
-            1. Ferrulen har en standardhöjd på 25 mm och indelad i 0,5mm-segmemnt (andra mått kan tillverkas på förfrågan).<br>
+            1. Ferrulen har en standardhöjd på 25 mm och indelad i 0,5mm-segment (andra mått kan tillverkas på förfrågan).<br>
             2. Max 4 individuella färger per ferrule.<br>
             3. <strong>OBS! Även vit färg måste väljas och klickas i</strong> på de ringar som ska vara vita.<br>
             4. Alla ringar måste vara färgade innan du kan skicka din förfrågan.<br>
-            5. När alla fält är färgade, klicka på skicka förfrågan för att maila din design så återkommer vi med pris.<br>
+            5. Fyll i dina uppgifter nedan och klicka på skicka förfrågan så återkommer vi med pris.<br>
             <br>
             <em>Färgvalen kommer att byggas ut efterhand, men saknar du någon färg är det bara att du hör av dig!</em>
         </div>
 
-        <button class="action-btn btn-green" onclick="sendOrder()">Skicka förfrågan / Beställning</button>
+        <!-- Formulär kopplat till FormSubmit (skickar direkt till din e-post) -->
+        <form id="orderForm" action="https://formsubmit.co/bilger.christian@gmail.com" method="POST">
+            <!-- Dolda inställningar för FormSubmit -->
+            <input type="hidden" name="_subject" value="Prisförfrågan / Beställning av egen designad Golf Ferrule">
+            <input type="hidden" name="_captcha" value="false">
+            <input type="hidden" name="_template" value="table">
+            
+            <!-- Dold input som fylls i automatiskt med design-datat -->
+            <input type="hidden" id="designDataInput" name="Ferrule_Design">
+
+            <div class="form-group">
+                <label for="name">Ditt namn:</label>
+                <input type="text" id="name" name="Namn" required placeholder="För- och efternamn">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Din e-postadress:</label>
+                <input type="email" id="email" name="Email" required placeholder="din.epost@exempel.se">
+            </div>
+
+            <div class="form-group">
+                <label for="message">Meddelande / Övriga önskemål (valfritt):</label>
+                <textarea id="message" name="Meddelande" rows="3" placeholder="T.ex. önskad höjd eller andra frågor..."></textarea>
+            </div>
+
+            <button type="submit" class="action-btn btn-green" onclick="prepareOrder(event)">Skicka förfrågan / Beställning</button>
+        </form>
+
         <button class="action-btn btn-secondary" onclick="resetFerrule()">Rensa allt</button>
 
+        <!-- Gul box för frågor -->
         <div class="yellow-box">
             Vid frågor eller funderingar, vänligen maila oss på:<br>
             <a href="mailto:bilger.christian@gmail.com">bilger.christian@gmail.com</a>
         </div>
     </div>
 
+    <!-- Copyright & Version -->
     <footer>
         © 2026 CBT AB. Alla rättigheter reserverade.<br>
-        Detta verktyg och dess designförslag är skyddade av upphovsrätt.
+        Detta verktyg och dess designförslag är skyddade av upphovsrätt.<br>
+        <span style="margin-top: 5px; display: inline-block;">Version: <span class="version-tag">v1.1</span></span>
     </footer>
 
     <script>
@@ -268,14 +330,12 @@
             
             let currentWidth = topWidth + (baseWidth - topWidth) * ((i - 1) / (totalSegments - 1));
             segment.style.width = currentWidth + "px";
-            // Inget färgval initialt (transparent/ofärgad)
 
             segment.onclick = () => {
                 const currentColors = getUsedColors();
                 const isAlreadyColored = segment.dataset.colored === "true";
                 const isAlreadyUsedInOther = currentColors.includes(selectedColor.toLowerCase());
 
-                // Om färgen inte används någon annanstans, och vi redan har 4 unika färger
                 if (!isAlreadyUsedInOther && !isAlreadyColored && currentColors.length >= maxUniqueColors) {
                     document.getElementById("warning-text").innerText = "Du kan max använda 4 olika färger per ferrule!";
                     return;
@@ -283,15 +343,14 @@
 
                 document.getElementById("warning-text").innerText = "";
                 segment.style.backgroundColor = selectedColor;
-                segment.style.border = "0.5px solid #d0d0d0"; // Byt till hel linje när den är färgad
-                segment.dataset.colored = "true"; // Markera som färgad
+                segment.style.border = "0.5px solid #d0d0d0";
+                segment.dataset.colored = "true";
                 segment.dataset.colorHex = selectedColor.toLowerCase();
             };
             
             ferruleContainer.appendChild(segment);
         }
 
-        // Hjälpfunktion för att räkna unika *aktiva* färger
         function getUsedColors() {
             let used = [];
             document.querySelectorAll(".segment").forEach(seg => {
@@ -315,7 +374,7 @@
             document.getElementById("warning-text").innerText = "";
         }
 
-        function sendOrder() {
+        function prepareOrder(event) {
             let designData = [];
             let allColored = true;
 
@@ -327,18 +386,16 @@
                 const foundColor = colors.find(c => c.hex.toLowerCase() === currentHex);
                 const colorName = foundColor ? foundColor.name : "Ej färgad";
                 
-                designData.push(`Ring ${index + 1} (Topp till Bas): ${colorName}`);
+                designData.push(`Ring ${index + 1}: ${colorName}`);
             });
 
             if (!allColored) {
+                event.preventDefault();
                 document.getElementById("warning-text").innerText = "Du måste färglägga alla ringar (inklusive vita) innan du kan skicka!";
                 return;
             }
 
-            let subject = encodeURIComponent("Prisförfrågan / Beställning av egen designad Golf Ferrule");
-            let body = encodeURIComponent("Hej!\n\nStandardhöjd 25mm önskas (eller enligt överenskommelse).\n\nJag vill skicka in en förfrågan/beställning på en ferrule med följande mönster:\n\n" + designData.join("\n") + "\n\nMina kontaktuppgifter:\nNamn:\nAdress:");
-            
-            window.location.href = `mailto:bilger.christian@gmail.com?subject=${subject}&body=${body}`;
+            document.getElementById("designDataInput").value = designData.join(", ");
         }
     </script>
 
