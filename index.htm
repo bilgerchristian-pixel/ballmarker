@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+# No python computation needed, just formatting the HTML
+html_code = """<!DOCTYPE html>
 <html lang="sv">
 <head>
     <meta charset="UTF-8">
@@ -78,6 +79,7 @@
             align-items: center;
             height: 330px; 
             justify-content: space-between;
+            touch-action: none; /* Förhindrar att skärmen scrollar när man ritar på mobilen */
         }
 
         .segment {
@@ -86,6 +88,8 @@
             border: 1px dashed #b0b0b0; /* Visar att den är ofärgad/ej klar */
             cursor: pointer;
             border-radius: 0.5px;
+            user-select: none; /* Förhindra textmarkering vid drag */
+            -webkit-user-drag: none;
         }
         .segment:hover {
             opacity: 0.8;
@@ -203,7 +207,7 @@
 
     <div class="content-wrap">
         <h1>Designa din Ferrule</h1>
-        <p>Välj färg i listan och klicka på ringarna för att måla.</p>
+        <p>Välj färg, klicka och <b>dra</b> över ringarna för att måla.</p>
 
         <!-- Färgpalett -->
         <div class="palette" id="palette"></div>
@@ -221,7 +225,7 @@
         <!-- Info-box -->
         <div class="info-box">
             <strong>Så här gör du för att beställa:</strong><br>
-            1. Ferrulen har en standardhöjd på 25 mm och indelad i 0,5mm-segment (andra mått kan tillverkas på förfrågan).<br>
+            1. Ferrulen har en standardhöjd på 25 mm och är indelad i 0,5mm-segment (andra mått kan tillverkas på förfrågan).<br>
             2. Max 4 individuella färger per ferrule.<br>
             3. <strong>OBS! Även vit färg måste väljas och klickas i</strong> på de ringar som ska vara vita.<br>
             4. Alla ringar måste vara färgade innan du kan skicka din förfrågan.<br>
@@ -230,14 +234,11 @@
             <em>Färgvalen kommer att byggas ut efterhand, men saknar du någon färg är det bara att du hör av dig!</em>
         </div>
 
-        <!-- Formulär kopplat till FormSubmit (skickar direkt till din e-post) -->
+        <!-- Formulär kopplat till FormSubmit -->
         <form id="orderForm" action="https://formsubmit.co/bilger.christian@gmail.com" method="POST">
-            <!-- Dolda inställningar för FormSubmit -->
             <input type="hidden" name="_subject" value="Prisförfrågan / Beställning av egen designad Golf Ferrule">
             <input type="hidden" name="_captcha" value="false">
             <input type="hidden" name="_template" value="table">
-            
-            <!-- Dold input som fylls i automatiskt med design-datat -->
             <input type="hidden" id="designDataInput" name="Ferrule_Design">
 
             <div class="form-group">
@@ -260,7 +261,6 @@
 
         <button class="action-btn btn-secondary" onclick="resetFerrule()">Rensa allt</button>
 
-        <!-- Gul box för frågor -->
         <div class="yellow-box">
             Vid frågor eller funderingar, vänligen maila oss på:<br>
             <a href="mailto:bilger.christian@gmail.com">bilger.christian@gmail.com</a>
@@ -271,7 +271,7 @@
     <footer>
         © 2026 CBT AB. Alla rättigheter reserverade.<br>
         Detta verktyg och dess designförslag är skyddade av upphovsrätt.<br>
-        <span style="margin-top: 5px; display: inline-block;">Version: <span class="version-tag">v1.1</span></span>
+        <span style="margin-top: 5px; display: inline-block;">Version: <span class="version-tag">v1.2</span></span>
     </footer>
 
     <script>
@@ -319,37 +319,78 @@
             paletteContainer.appendChild(item);
         });
 
-        // Bygg ferrulen (startar helt ofärgad med markering)
         const ferruleContainer = document.getElementById("ferrule");
         const topWidth = 150;  
         const baseWidth = 187.5; 
 
+        // Bygg ferrulen
         for (let i = 1; i <= totalSegments; i++) {
             const segment = document.createElement("div");
             segment.className = "segment";
-            
             let currentWidth = topWidth + (baseWidth - topWidth) * ((i - 1) / (totalSegments - 1));
             segment.style.width = currentWidth + "px";
-
-            segment.onclick = () => {
-                const currentColors = getUsedColors();
-                const isAlreadyColored = segment.dataset.colored === "true";
-                const isAlreadyUsedInOther = currentColors.includes(selectedColor.toLowerCase());
-
-                if (!isAlreadyUsedInOther && !isAlreadyColored && currentColors.length >= maxUniqueColors) {
-                    document.getElementById("warning-text").innerText = "Du kan max använda 4 olika färger per ferrule!";
-                    return;
-                }
-
-                document.getElementById("warning-text").innerText = "";
-                segment.style.backgroundColor = selectedColor;
-                segment.style.border = "0.5px solid #d0d0d0";
-                segment.dataset.colored = "true";
-                segment.dataset.colorHex = selectedColor.toLowerCase();
-            };
-            
             ferruleContainer.appendChild(segment);
         }
+
+        // --- Logik för Drag & Måla ---
+        let isDrawing = false;
+
+        function paintSegment(segment) {
+            if (!segment.classList.contains("segment")) return;
+
+            const currentColors = getUsedColors();
+            const isAlreadyColored = segment.dataset.colored === "true";
+            const isAlreadyUsedInOther = currentColors.includes(selectedColor.toLowerCase());
+
+            if (!isAlreadyUsedInOther && !isAlreadyColored && currentColors.length >= maxUniqueColors) {
+                document.getElementById("warning-text").innerText = "Du kan max använda 4 olika färger per ferrule!";
+                return;
+            }
+
+            document.getElementById("warning-text").innerText = "";
+            segment.style.backgroundColor = selectedColor;
+            segment.style.border = "0.5px solid #d0d0d0";
+            segment.dataset.colored = "true";
+            segment.dataset.colorHex = selectedColor.toLowerCase();
+        }
+
+        // Mus-event (Dator)
+        ferruleContainer.addEventListener("mousedown", (e) => {
+            isDrawing = true;
+            paintSegment(e.target);
+        });
+
+        ferruleContainer.addEventListener("mouseover", (e) => {
+            if (isDrawing) {
+                paintSegment(e.target);
+            }
+        });
+
+        document.addEventListener("mouseup", () => {
+            isDrawing = false;
+        });
+
+        // Touch-event (Mobil / Surfplatta)
+        ferruleContainer.addEventListener("touchstart", (e) => {
+            isDrawing = true;
+            let touch = e.touches[0];
+            let target = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (target) paintSegment(target);
+        }, { passive: false });
+
+        ferruleContainer.addEventListener("touchmove", (e) => {
+            if (isDrawing) {
+                e.preventDefault(); // Stoppar sidan från att scrolla när man drar fingret över ringarna
+                let touch = e.touches[0];
+                let target = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (target) paintSegment(target);
+            }
+        }, { passive: false });
+
+        document.addEventListener("touchend", () => {
+            isDrawing = false;
+        });
+        // --- Slut på Drag & Måla ---
 
         function getUsedColors() {
             let used = [];
@@ -400,4 +441,4 @@
     </script>
 
 </body>
-</html>
+</html>"""
