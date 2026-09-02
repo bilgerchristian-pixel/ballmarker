@@ -1,664 +1,699 @@
 <!DOCTYPE html>
+
 <html lang="sv">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Designa din ballmarker - CBT AB</title>
-    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+
+    <title>Golf Ferrule Designer</title>
+
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; text-align: center; background: #f4f4f4; padding: 15px; color: #333; margin: 0; }
-        
-        h1 { font-size: 20px; margin: 10px 0 5px 0; }
-        .sub-header { font-size: 13px; color: #666; margin-bottom: 15px; }
 
-        /* Sticky container för mobil */
-        .preview-wrapper {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: rgba(244, 244, 244, 0.95);
-            padding: 10px 0;
-            backdrop-filter: blur(5px);
-        }
+        body {
 
-        #marker-container {
-            position: relative;
-            width: 200px;
-            height: 200px;
-            margin: 0 auto;
-            transition: all 0.3s ease;
-        }
+            font-family: Arial, sans-serif;
 
-        #marker {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            position: relative;
-            overflow: hidden; 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-            border: 3px solid rgba(0,0,0,0.15);
-            background-color: #ffd700;
-            transition: background 0.3s;
-            user-select: none; 
-        }
+            background-color: #f4f4f9;
 
-        #margin-mask {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 6; 
-            transition: border-width 0.1s ease;
-        }
+            color: #333;
 
-        #margin-line {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            border-radius: 50%;
-            border: 2px dashed rgba(255, 0, 0, 0.7); 
-            pointer-events: none; 
-            z-index: 10; 
-        }
+            text-align: center;
 
-        .corten { background: linear-gradient(135deg, #a0522d, #8b4513) !important; }
-        .rostfritt { background: linear-gradient(135deg, #e0e0e0, #9e9e9e) !important; }
-        .massing { background: linear-gradient(135deg, #ffd700, #b8860b) !important; }
+            margin: 0;
 
-        #uploaded-image {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%) scale(1);
-            width: 100%; height: auto;
-            filter: grayscale(100%) contrast(200%);
-            mix-blend-mode: multiply;
-            opacity: 0.85;
-            cursor: move;
-            touch-action: none; 
-            z-index: 5; 
-        }
+            padding: 20px;
 
-        #draggable-text {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 16px; font-weight: bold; color: #111;
-            cursor: move; touch-action: none;
-            z-index: 7; white-space: nowrap;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-            display: none;
-        }
-
-        #edge-text-svg {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: 8; display: none;
-        }
-
-        /* Controls & Tab Navigation */
-        .controls { 
-            background: white; 
-            padding: 15px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
-            margin: 10px auto 0 auto; 
-            max-width: 460px; 
-            text-align: left; 
-            width: 100%;
-        }
-
-        .tab-buttons {
             display: flex;
-            gap: 4px;
-            margin-bottom: 15px;
-            background: #eee;
-            padding: 4px;
-            border-radius: 8px;
+
+            flex-direction: column;
+
+            min-height: 90vh;
+
+            justify-content: space-between;
+
         }
 
-        .tab-btn {
+        .content-wrap {
+
             flex: 1;
-            padding: 10px 4px;
-            font-size: 12px;
-            font-weight: bold;
-            border: none;
-            background: transparent;
-            color: #666;
-            border-radius: 6px;
+
+            max-width: 500px;
+
+            margin: 0 auto;
+
+            width: 100%;
+
+        }
+
+        h1 { margin-bottom: 5px; }
+
+        p { color: #666; margin-bottom: 20px; }
+
+        
+
+        /* Färgpalett */
+
+        .palette {
+
+            display: flex;
+
+            justify-content: center;
+
+            gap: 12px;
+
+            margin-bottom: 20px;
+
+            flex-wrap: wrap;
+
+        }
+
+        .color-item {
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
             cursor: pointer;
-            transition: all 0.2s;
+
         }
 
-        .tab-btn.active {
-            background: white;
-            color: #0078d4;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        .color-btn {
+
+            width: 44px;
+
+            height: 44px;
+
+            border-radius: 50%;
+
+            border: 3px solid #ccc;
+
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+
+            transition: transform 0.1s;
+
         }
 
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        .color-btn:hover {
 
-        .control-group { margin-bottom: 12px; }
-        .control-group label { font-weight: bold; display: block; margin-bottom: 4px; font-size: 13px; }
+            transform: scale(1.05);
 
-        select, input[type="file"], input[type="range"], input[type="text"], input[type="email"], textarea { 
-            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; margin-bottom: 4px;
         }
-        textarea { resize: vertical; height: 70px; }
 
-        .btn { background: #28a745; color: white; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 10px; }
-        .btn:hover { background: #218838; }
-        .btn:disabled { background: #6c757d; cursor: not-allowed; }
+        .color-item.selected .color-btn {
 
-        .success-box { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; font-size: 14px; color: #155724; border-radius: 4px; margin-top: 10px; display: none; line-height: 1.4; }
+            border-color: #000;
 
-        /* Sidfot / Footer */
-        footer {
-            margin: 25px auto 15px auto;
-            font-size: 11px;
-            color: #888;
+            transform: scale(1.12);
+
+        }
+
+        .color-name {
+
+            font-size: 12px;
+
+            margin-top: 5px;
+
+            color: #444;
+
+            font-weight: bold;
+
+        }
+
+
+
+        /* Ferrule-behållare */
+
+        .ferrule-box {
+
+            display: inline-block;
+
+            background: #fff;
+
+            padding: 25px 35px;
+
+            border-radius: 12px;
+
+            box-shadow: 0 5px 12px rgba(0,0,0,0.1);
+
+            margin-bottom: 10px;
+
+        }
+
+
+
+        #ferrule {
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            height: 330px; 
+
+            justify-content: space-between;
+
+        }
+
+
+
+        .segment {
+
+            height: 5.25px; 
+
+            background-color: transparent; /* Ofärgad från start */
+
+            border: 1px dashed #b0b0b0; /* Visar att den är ofärgad/ej klar */
+
+            cursor: pointer;
+
+            border-radius: 0.5px;
+
+        }
+
+        .segment:hover {
+
+            opacity: 0.8;
+
+            border-color: #333;
+
+        }
+
+
+
+        /* Varningstext */
+
+        #warning-text {
+
+            color: #c0392b;
+
+            font-size: 14px;
+
+            font-weight: bold;
+
+            margin-bottom: 15px;
+
+            min-height: 20px;
+
+        }
+
+
+
+        /* Stil för boxar och knappar */
+
+        .info-box {
+
+            background-color: #ebf3fb;
+
+            border-left: 5px solid #1b75d0;
+
+            padding: 15px;
+
+            text-align: left;
+
+            border-radius: 4px;
+
+            margin-bottom: 20px;
+
+            font-size: 14px;
+
             line-height: 1.5;
+
+            color: #1a252f;
+
         }
 
-        /* Mobilanpassningar */
-        @media (max-width: 600px) {
-            #marker-container {
-                width: 150px;
-                height: 150px;
-            }
-            .tab-btn { font-size: 11px; padding: 8px 2px; }
+
+
+        .yellow-box {
+
+            background-color: #fef6e7;
+
+            border-left: 5px solid #f1c40f;
+
+            padding: 15px;
+
+            text-align: left;
+
+            border-radius: 4px;
+
+            margin-top: 20px;
+
+            font-size: 14px;
+
+            line-height: 1.5;
+
+            color: #1a252f;
+
         }
+
+
+
+        .yellow-box a {
+
+            color: #0066cc;
+
+            text-decoration: none;
+
+            font-weight: bold;
+
+        }
+
+        .yellow-box a:hover {
+
+            text-decoration: underline;
+
+        }
+
+
+
+        .action-btn {
+
+            width: 100%;
+
+            padding: 14px;
+
+            font-size: 16px;
+
+            font-weight: bold;
+
+            color: white;
+
+            border: none;
+
+            border-radius: 6px;
+
+            cursor: pointer;
+
+            margin-bottom: 15px;
+
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+            text-align: center;
+
+        }
+
+
+
+        .btn-green {
+
+            background-color: #27ae60;
+
+        }
+
+        .btn-green:hover { background-color: #219653; }
+
+
+
+        .btn-secondary {
+
+            background-color: #95a5a6;
+
+            margin-bottom: 15px;
+
+        }
+
+        .btn-secondary:hover { background-color: #7f8c8d; }
+
+
+
+        /* Sidfot / Copyright */
+
+        footer {
+
+            margin-top: 40px;
+
+            font-size: 12px;
+
+            color: #777;
+
+            border-top: 1px solid #ddd;
+
+            padding-top: 15px;
+
+            line-height: 1.5;
+
+        }
+
     </style>
+
 </head>
+
 <body>
 
-    <!-- OSYNLIG RAM FÖR SKICKNING I BAKGRUNDEN -->
-    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
 
-    <h1>Designa din Ballmarker</h1>
-    <div class="sub-header">CBT AB - Välj material, text, färg & logga</div>
 
-    <!-- STICKY FÖRHANDSGRANSKNING -->
-    <div class="preview-wrapper">
-        <div id="marker-container">
-            <div id="marker">
-                <img id="uploaded-image" src="" alt="" style="display:none;">
-                <div id="draggable-text"></div>
-                
-                <svg id="edge-text-svg" viewBox="0 0 200 200">
-                    <path id="textPathTop" d="M 25,100 A 75,75 0 1,1 175,100" fill="none" />
-                    <text font-weight="bold" fill="#111" text-anchor="middle" id="svgTextNode">
-                        <textPath href="#textPathTop" startOffset="50%" id="edgeTextValue"></textPath>
-                    </text>
-                </svg>
+    <div class="content-wrap">
 
-                <div id="margin-mask"></div>
-            </div>
-            <div id="margin-line"></div>
-        </div>
-    </div>
+        <h1>Designa din Ferrule</h1>
 
-    <!-- FLIK-BASERAT GRÄNSSNITT -->
-    <div class="controls">
-        <div class="tab-buttons">
-            <button type="button" class="tab-btn active" onclick="switchTab('design')">1. Material & Bild</button>
-            <button type="button" class="tab-btn" onclick="switchTab('text')">2. Text & Paintfill</button>
-            <button type="button" class="tab-btn" onclick="switchTab('contact')">3. Skicka</button>
+        <p>Välj färg i listan och klicka på ringarna för att måla.</p>
+
+
+
+        <!-- Färgpalett -->
+
+        <div class="palette" id="palette"></div>
+
+
+
+        <!-- Varningstext -->
+
+        <div id="warning-text"></div>
+
+
+
+        <!-- Ferrulen -->
+
+        <div class="ferrule-box">
+
+            <div id="ferrule"></div>
+
         </div>
 
-        <form id="orderForm" 
-              action="https://formsubmit.co/bilger.christian@gmail.com" 
-              method="POST" 
-              enctype="multipart/form-data" 
-              target="hidden_iframe" 
-              onsubmit="handleOrder(event)">
-            
-            <!-- Inställningar till FormSubmit -->
-            <input type="hidden" name="_captcha" value="false">
-            <input type="hidden" name="_template" value="table">
-            
-            <!-- Dolda fält för genererade filbilagor -->
-            <input type="file" id="hiddenDesignFile" name="Designskiss" style="display:none;">
-            <input type="file" id="hiddenOriginalFile" name="Original_Logga" style="display:none;">
+        <br>
 
-            <!-- FLIK 1: MATERIAL & BILD -->
-            <div id="tab-design" class="tab-content active">
-                <div class="control-group">
-                    <label>Välj material:</label>
-                    <select id="materialSelect" name="Material" onchange="changeMaterial()">
-                        <option value="Massing (Guld)">Mässing (Guld)</option>
-                        <option value="Rostfritt (Silver)">Rostfritt (Silver)</option>
-                        <option value="Corten (Brunt/Rost)">Corten (Brunt/Rost)</option>
-                    </select>
-                </div>
+        <span style="font-size: 13px; color: #666; font-weight: bold; display: block; margin-bottom: 20px;">↑ Toppen av klubban (smal, 12mm) | Basen nedåt (bred, 14mm) ↓</span>
 
-                <div class="control-group">
-                    <label>Ladda upp logga/bild (valfritt):</label>
-                    <input type="file" id="imageUpload" accept="image/*" onchange="handleImageUpload(event)">
-                </div>
 
-                <div class="control-group">
-                    <label>Skala bild: <span id="scaleValue">100</span>%</label>
-                    <input type="range" id="scaleRange" min="10" max="300" value="100" oninput="scaleImage(this.value)">
-                </div>
 
-                <div class="control-group">
-                    <label>Marginal från kant: <span id="marginValue">5</span>%</label>
-                    <input type="range" id="marginRange" min="0" max="35" value="5" oninput="updateMargin(this.value)">
-                    <small style="color: #666; font-size: 11px;">Döljer element utanför den röda linjen.</small>
-                </div>
+        <!-- Info-box -->
 
-                <button type="button" class="btn" style="background:#0078d4;" onclick="switchTab('text')">Vidare till Text & Paintfill ➔</button>
-            </div>
+        <div class="info-box">
 
-            <!-- FLIK 2: TEXT & PAINTFILL -->
-            <div id="tab-text" class="tab-content">
-                <div class="control-group" style="background: #fdf8e2; padding: 10px; border-radius: 6px; border: 1px solid #f9e79f;">
-                    <label style="color: #b7950b;">Böjd text (längs kanten):</label>
-                    <input type="text" id="edgeTextInput" name="Bojd_Text" placeholder="T.ex. KLUBBMÄSTARE 2026" oninput="updateTextContent()" style="background: white;">
-                    
-                    <div style="display: flex; gap: 6px; margin-top: 4px;">
-                        <div style="flex: 1;">
-                            <select id="edgeFontSelect" onchange="updateTextStyles()" style="background: white; font-size: 11px;">
-                                <option value="sans-serif">Modern</option>
-                                <option value="Georgia, serif">Klassisk</option>
-                                <option value="'Great Vibes', cursive">Handstil</option>
-                                <option value="Impact, sans-serif">Block</option>
-                            </select>
-                        </div>
-                        <div style="flex: 1;">
-                            <select id="edgePaintSelect" onchange="updateTextStyles()" style="background: white; font-size: 11px;">
-                                <option value="default">Standard gravyr</option>
-                                <option value="#111111">⬛ Svart</option>
-                                <option value="#d32f2f">🟥 Röd</option>
-                                <option value="#ffffff">⬜ Vit</option>
-                                <option value="#c0c0c0">◽ Silver</option>
-                                <option value="#2e7d32">🟩 Grön</option>
-                                <option value="#1565c0">🟦 Blå</option>
-                            </select>
-                        </div>
-                        <div style="width: 70px;">
-                            <input type="range" id="edgeTextSizeRange" min="10" max="24" value="14" oninput="updateTextStyles()">
-                        </div>
-                    </div>
-                </div>
+            <strong>Så här gör du för att beställa:</strong><br>
 
-                <div class="control-group" style="background: #eef6fc; padding: 10px; border-radius: 6px; border: 1px solid #c7e0f4;">
-                    <label style="color: #0078d4;">Mitten-text (flyttbar):</label>
-                    <input type="text" id="freeTextInput" name="Mitten_Text" placeholder="T.ex. HOLE IN ONE" oninput="updateTextContent()" style="background: white;">
-                    
-                    <div style="display: flex; gap: 6px; margin-top: 4px;">
-                        <div style="flex: 1;">
-                            <select id="freeFontSelect" onchange="updateTextStyles()" style="background: white; font-size: 11px;">
-                                <option value="sans-serif">Modern</option>
-                                <option value="Georgia, serif">Klassisk</option>
-                                <option value="'Great Vibes', cursive">Handstil</option>
-                                <option value="Impact, sans-serif">Block</option>
-                            </select>
-                        </div>
-                        <div style="flex: 1;">
-                            <select id="freePaintSelect" onchange="updateTextStyles()" style="background: white; font-size: 11px;">
-                                <option value="default">Standard gravyr</option>
-                                <option value="#111111">⬛ Svart</option>
-                                <option value="#d32f2f">🟥 Röd</option>
-                                <option value="#ffffff">⬜ Vit</option>
-                                <option value="#c0c0c0">◽ Silver</option>
-                                <option value="#2e7d32">🟩 Grön</option>
-                                <option value="#1565c0">🟦 Blå</option>
-                            </select>
-                        </div>
-                        <div style="width: 70px;">
-                            <input type="range" id="freeTextSizeRange" min="10" max="32" value="16" oninput="updateTextStyles()">
-                        </div>
-                    </div>
-                </div>
+            1. Ferrulen har en standardhöjd på 25 mm och indelad i 0,5mm-segmemnt (andra mått kan tillverkas på förfrågan).<br>
 
-                <button type="button" class="btn" style="background:#0078d4;" onclick="switchTab('contact')">Vidare till Kontakt & Skicka ➔</button>
-            </div>
+            2. Max 4 individuella färger per ferrule.<br>
 
-            <!-- FLIK 3: KONTAKT & SKICKA -->
-            <div id="tab-contact" class="tab-content">
-                <div class="control-group">
-                    <label>Ditt Namn / Företag:</label>
-                    <input type="text" id="namn" name="Namn" required placeholder="För- och efternamn">
-                </div>
+            3. <strong>OBS! Även vit färg måste väljas och klickas i</strong> på de ringar som ska vara vita.<br>
 
-                <div class="control-group">
-                    <label>Din E-post:</label>
-                    <input type="email" id="epost" name="email" required placeholder="namn@exempel.se">
-                </div>
+            4. Alla ringar måste vara färgade innan du kan skicka din förfrågan.<br>
 
-                <div class="control-group">
-                    <label>Meddelande / Antal:</label>
-                    <textarea id="meddelande" name="Meddelande" placeholder="T.ex. Önskar förfrågan på 50 st..."></textarea>
-                </div>
+            5. När alla fält är färgade, klicka på skicka förfrågan för att maila din design så återkommer vi med pris.
 
-                <button type="submit" id="submitBtn" class="btn">Skicka förfrågan</button>
-                
-                <div id="successMsg" class="success-box">
-                    <strong>Tack för din förfrågan!</strong><br>
-                    Vi har tagit emot din design och återkommer till dig så snart som möjligt.
-                </div>
-            </div>
+        </div>
 
-        </form>
+
+
+        <!-- Knappar -->
+
+        <button class="action-btn btn-green" onclick="sendOrder()">Skicka förfrågan / Beställning</button>
+
+        <button class="action-btn btn-secondary" onclick="resetFerrule()">Rensa allt</button>
+
+
+
+        <!-- Gul box för frågor -->
+
+        <div class="yellow-box">
+
+            Vid frågor eller funderingar, vänligen maila oss på:<br>
+
+            <a href="mailto:bilger.christian@gmail.com">bilger.christian@gmail.com</a>
+
+        </div>
+
     </div>
 
-    <!-- SIDFOT -->
+
+
+    <!-- Copyright -->
+
     <footer>
-        &copy; 2026 CBT AB. All rights reserved.<br>
-        <span style="opacity: 0.7;">v1.2.0</span>
+
+        © 2026 CBT AB. Alla rättigheter reserverade.<br>
+
+        Detta verktyg och dess designförslag är skyddade av upphovsrätt.
+
     </footer>
 
+
+
     <script>
-        const img = document.getElementById('uploaded-image');
-        const draggableText = document.getElementById('draggable-text');
-        const edgeTextSvg = document.getElementById('edge-text-svg');
-        const svgTextNode = document.getElementById('svgTextNode');
-        const edgeTextValue = document.getElementById('edgeTextValue');
-        const marginLine = document.getElementById('margin-line');
-        const marginMask = document.getElementById('margin-mask');
-        const marker = document.getElementById('marker');
-        
-        let savedImageData = null;
-        let originalFile = null; 
 
-        let isDraggingImg = false, imgXOffset = 0, imgYOffset = 0, imgInitX = 0, imgInitY = 0;
-        let isDraggingText = false, textXOffset = 0, textYOffset = 0, textInitX = 0, textInitY = 0;
+        const colors = [
 
-        window.onload = function() {
-            updateMargin(5);
-            updateTextStyles();
-        };
+            { name: "Svart", hex: "#111111" },
 
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            { name: "Grå", hex: "#888888" },
+
+            { name: "Vit", hex: "#ffffff" },
+
+            { name: "Grön", hex: "#2ecc71" },
+
+            { name: "Turkos", hex: "#1abc9c" },
+
+            { name: "Mörkblå", hex: "#1b2a4a" },
+
+            { name: "Lila", hex: "#9b59b6" },
+
+            { name: "Rosa", hex: "#ff69b4" },
+
+            { name: "Silver", hex: "#d0d3d4" },
+
+            { name: "Guld", hex: "#d4ac0d" }
+
+        ];
+
+
+
+        let selectedColor = colors[0].hex;
+
+        const totalSegments = 50;
+
+        const maxUniqueColors = 4;
+
+
+
+        // Bygg färgkartan
+
+        const paletteContainer = document.getElementById("palette");
+
+        colors.forEach((col, index) => {
+
+            const item = document.createElement("div");
+
+            item.className = "color-item";
+
+            if (index === 0) item.classList.add("selected");
+
+
+
+            const btn = document.createElement("div");
+
+            btn.className = "color-btn";
+
+            btn.style.backgroundColor = col.hex;
+
+
+
+            const label = document.createElement("span");
+
+            label.className = "color-name";
+
+            label.innerText = col.name;
+
+
+
+            item.appendChild(btn);
+
+            item.appendChild(label);
+
             
-            document.getElementById('tab-' + tabId).classList.add('active');
+
+            item.onclick = () => {
+
+                document.querySelectorAll(".color-item").forEach(i => i.classList.remove("selected"));
+
+                item.classList.add("selected");
+
+                selectedColor = col.hex;
+
+            };
+
+            paletteContainer.appendChild(item);
+
+        });
+
+
+
+        // Bygg ferrulen (startar helt ofärgad med markering)
+
+        const ferruleContainer = document.getElementById("ferrule");
+
+        const topWidth = 150;  
+
+        const baseWidth = 187.5; 
+
+
+
+        for (let i = 1; i <= totalSegments; i++) {
+
+            const segment = document.createElement("div");
+
+            segment.className = "segment";
+
             
-            const btns = document.querySelectorAll('.tab-btn');
-            if (tabId === 'design') btns[0].classList.add('active');
-            if (tabId === 'text') btns[1].classList.add('active');
-            if (tabId === 'contact') btns[2].classList.add('active');
-        }
 
-        function getActualTextColor(paintVal) {
-            if (paintVal && paintVal !== 'default') return paintVal;
-            const mat = document.getElementById('materialSelect').value;
-            if (mat.includes('Corten')) return '#555555';
-            if (mat.includes('Rostfritt')) return '#1f1f1f';
-            return '#4a3300';
-        }
+            let currentWidth = topWidth + (baseWidth - topWidth) * ((i - 1) / (totalSegments - 1));
 
-        function changeMaterial() {
-            const val = document.getElementById('materialSelect').value;
-            marker.className = '';
-            if (val.includes('Corten')) marker.classList.add('corten');
-            else if (val.includes('Rostfritt')) marker.classList.add('rostfritt');
-            else marker.classList.add('massing');
-            
-            updateMargin(document.getElementById('marginRange').value);
-            updateTextStyles();
-        }
+            segment.style.width = currentWidth + "px";
 
-        function handleImageUpload(event) {
-            const file = event.target.files[0];
-            if (file) {
-                originalFile = file; 
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    savedImageData = e.target.result;
-                    img.src = savedImageData;
-                    img.style.display = 'block';
-                    resetImagePosition();
-                }
-                reader.readAsDataURL(file);
-            }
-        }
+            // Inget färgval initialt (transparent/ofärgad)
 
-        function resetImagePosition() {
-            document.getElementById('scaleRange').value = 100;
-            document.getElementById('scaleValue').innerText = 100;
-            img.style.width = '100%';
-            imgXOffset = 0; imgYOffset = 0;
-            updateImgTransform();
-        }
 
-        function scaleImage(val) {
-            document.getElementById('scaleValue').innerText = val;
-            img.style.width = val + '%';
-            updateImgTransform();
-        }
 
-        function updateImgTransform() {
-            img.style.transform = `translate(-50%, -50%) translate3d(${imgXOffset}px, ${imgYOffset}px, 0)`;
-        }
+            segment.onclick = () => {
 
-        function updateTextStyles() {
-            const freeSize = document.getElementById('freeTextSizeRange').value;
-            const edgeSize = document.getElementById('edgeTextSizeRange').value;
-            const freeFont = document.getElementById('freeFontSelect').value;
-            const edgeFont = document.getElementById('edgeFontSelect').value;
-            const edgePaint = document.getElementById('edgePaintSelect').value;
-            const freePaint = document.getElementById('freePaintSelect').value;
+                const currentColors = getUsedColors();
 
-            draggableText.style.fontSize = freeSize + 'px';
-            draggableText.style.fontFamily = freeFont;
-            draggableText.style.color = getActualTextColor(freePaint);
+                const isAlreadyColored = segment.dataset.colored === "true";
 
-            svgTextNode.setAttribute('font-size', edgeSize);
-            svgTextNode.style.fontFamily = edgeFont;
-            svgTextNode.setAttribute('fill', getActualTextColor(edgePaint));
-        }
+                const isAlreadyUsedInOther = currentColors.includes(selectedColor.toLowerCase());
 
-        function updateTextContent() {
-            const edgeVal = document.getElementById('edgeTextInput').value;
-            const freeVal = document.getElementById('freeTextInput').value;
 
-            edgeTextValue.textContent = edgeVal;
-            edgeTextSvg.style.display = edgeVal.trim() ? 'block' : 'none';
 
-            draggableText.innerText = freeVal;
-            draggableText.style.display = freeVal.trim() ? 'block' : 'none';
-        }
+                // Om färgen inte används någon annanstans, och vi redan har 4 unika färger
 
-        function updateMargin(val) {
-            const marginPercent = parseInt(val);
-            document.getElementById('marginValue').innerText = marginPercent;
-            
-            const markerSize = marker.offsetWidth || 150;
-            const marginPx = (marginPercent / 100) * (markerSize / 2);
-            
-            marginLine.style.top = marginPx + 'px';
-            marginLine.style.left = marginPx + 'px';
-            marginLine.style.width = (markerSize - (2 * marginPx)) + 'px';
-            marginLine.style.height = (markerSize - (2 * marginPx)) + 'px';
+                if (!isAlreadyUsedInOther && !isAlreadyColored && currentColors.length >= maxUniqueColors) {
 
-            let bgColor = '#b8860b';
-            const valMat = document.getElementById('materialSelect').value;
-            if (valMat.includes('Corten')) bgColor = '#8b4513';
-            else if (valMat.includes('Rostfritt')) bgColor = '#9e9e9e';
+                    document.getElementById("warning-text").innerText = "Du kan max använda 4 olika färger per ferrule!";
 
-            marginMask.style.border = `${marginPx}px solid ${bgColor}`;
-        }
+                    return;
 
-        img.addEventListener("mousedown", (e) => startDrag(e, 'img'));
-        img.addEventListener("touchstart", (e) => startDrag(e, 'img'));
-        draggableText.addEventListener("mousedown", (e) => startDrag(e, 'text'));
-        draggableText.addEventListener("touchstart", (e) => startDrag(e, 'text'));
-
-        window.addEventListener("mouseup", endDrag);
-        window.addEventListener("touchend", endDrag);
-        window.addEventListener("mousemove", dragMove);
-        window.addEventListener("touchmove", dragMove);
-
-        let activeTarget = null;
-
-        function startDrag(e, targetType) {
-            activeTarget = targetType;
-            const clientX = e.type === "touchstart" ? e.touches[0].clientX : e.clientX;
-            const clientY = e.type === "touchstart" ? e.touches[0].clientY : e.clientY;
-
-            if (targetType === 'img') {
-                isDraggingImg = true;
-                imgInitX = clientX - imgXOffset;
-                imgInitY = clientY - imgYOffset;
-            } else {
-                isDraggingText = true;
-                textInitX = clientX - textXOffset;
-                textInitY = clientY - textYOffset;
-            }
-        }
-
-        function endDrag() {
-            isDraggingImg = false; isDraggingText = false; activeTarget = null;
-        }
-
-        function dragMove(e) {
-            const clientX = e.type === "touchmove" ? e.touches[0].clientX : e.clientX;
-            const clientY = e.type === "touchmove" ? e.touches[0].clientY : e.clientY;
-
-            if (isDraggingImg && activeTarget === 'img') {
-                if (e.type === "touchmove") e.preventDefault();
-                imgXOffset = clientX - imgInitX;
-                imgYOffset = clientY - imgInitY;
-                updateImgTransform();
-            } else if (isDraggingText && activeTarget === 'text') {
-                if (e.type === "touchmove") e.preventDefault();
-                textXOffset = clientX - textInitX;
-                textYOffset = clientY - textInitY;
-                draggableText.style.transform = `translate(-50%, -50%) translate3d(${textXOffset}px, ${textYOffset}px, 0)`;
-            }
-        }
-
-        // FORMSUBMIT MULTIPART MED INTEGRERADE FILER
-        function handleOrder(event) {
-            event.preventDefault();
-
-            const submitBtn = document.getElementById('submitBtn');
-            const successMsg = document.getElementById('successMsg');
-            const form = document.getElementById('orderForm');
-
-            submitBtn.disabled = true;
-            submitBtn.innerText = "Skickar din förfrågan...";
-
-            const material = document.getElementById('materialSelect').value;
-            const edgeText = document.getElementById('edgeTextInput').value || '';
-            const freeText = document.getElementById('freeTextInput').value || '';
-
-            // Rendera Canvas
-            const canvas = document.createElement('canvas');
-            const size = 600; 
-            canvas.width = size; canvas.height = size;
-            const ctx = canvas.getContext('2d');
-
-            ctx.beginPath();
-            ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-            ctx.clip();
-
-            let bgGrad = ctx.createLinearGradient(0, 0, size, size);
-            if (material.includes('Corten')) { bgGrad.addColorStop(0, '#a0522d'); bgGrad.addColorStop(1, '#8b4513'); }
-            else if (material.includes('Rostfritt')) { bgGrad.addColorStop(0, '#e0e0e0'); bgGrad.addColorStop(1, '#9e9e9e'); }
-            else { bgGrad.addColorStop(0, '#ffd700'); bgGrad.addColorStop(1, '#b8860b'); }
-
-            ctx.fillStyle = bgGrad;
-            ctx.fillRect(0, 0, size, size);
-
-            const markerWidth = marker.offsetWidth || 150;
-            const scaleFactor = size / markerWidth;
-
-            // Bild i gråskala
-            if (img.src && img.style.display !== 'none' && img.complete && img.naturalWidth !== 0) {
-                ctx.save();
-                const userScale = parseInt(document.getElementById('scaleRange').value) / 100;
-                const imgDrawWidth = size * userScale;
-                const imgDrawHeight = (img.naturalHeight / img.naturalWidth) * imgDrawWidth;
-                const imgCenterX = (size / 2) + (imgXOffset * scaleFactor);
-                const imgCenterY = (size / 2) + (imgYOffset * scaleFactor);
-
-                ctx.filter = 'grayscale(100%) contrast(200%)';
-                ctx.globalCompositeOperation = 'multiply';
-                ctx.globalAlpha = 0.85;
-                ctx.drawImage(img, imgCenterX - (imgDrawWidth / 2), imgCenterY - (imgDrawHeight / 2), imgDrawWidth, imgDrawHeight);
-                ctx.restore();
-            }
-
-            // Marginal
-            const marginPercent = parseInt(document.getElementById('marginRange').value);
-            if (marginPercent > 0) {
-                const marginPxCanvas = ((marginPercent / 100) * (markerWidth / 2)) * scaleFactor;
-                ctx.beginPath();
-                ctx.arc(size / 2, size / 2, size + 100, 0, Math.PI * 2, false);
-                ctx.arc(size / 2, size / 2, (size / 2) - marginPxCanvas, 0, Math.PI * 2, true);
-                ctx.fillStyle = bgGrad;
-                ctx.fill();
-            }
-
-            // Kanttext
-            if (edgeText.trim()) {
-                ctx.save();
-                ctx.font = `bold ${parseInt(document.getElementById('edgeTextSizeRange').value) * scaleFactor}px ${document.getElementById('edgeFontSelect').value}`;
-                ctx.fillStyle = getActualTextColor(document.getElementById('edgePaintSelect').value);
-                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                const radius = (size / 2) - (24 * scaleFactor); 
-                const chars = edgeText.split('');
-                let totalAngle = 0;
-                chars.forEach(c => totalAngle += ctx.measureText(c).width / radius);
-                let currentAngle = (-Math.PI / 2) - (totalAngle / 2);
-
-                chars.forEach((char) => {
-                    const angleSlice = ctx.measureText(char).width / radius;
-                    currentAngle += angleSlice / 2;
-                    ctx.save();
-                    ctx.translate(size / 2, size / 2);
-                    ctx.rotate(currentAngle);
-                    ctx.translate(radius, 0);
-                    ctx.rotate(Math.PI / 2);
-                    ctx.fillText(char, 0, 0);
-                    ctx.restore();
-                    currentAngle += angleSlice / 2;
-                });
-                ctx.restore();
-            }
-
-            // Mitten-text
-            if (freeText.trim()) {
-                ctx.save();
-                ctx.font = `bold ${parseInt(document.getElementById('freeTextSizeRange').value) * scaleFactor}px ${document.getElementById('freeFontSelect').value}`;
-                ctx.fillStyle = getActualTextColor(document.getElementById('freePaintSelect').value);
-                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText(freeText, (size / 2) + (textXOffset * scaleFactor), (size / 2) + (textYOffset * scaleFactor));
-                ctx.restore();
-            }
-
-            // Generera filbilaga och skicka standard-formulär i iframe
-            canvas.toBlob(function(blob) {
-                // 1. Skapa en riktig fil av canvas-bilden
-                const designFile = new File([blob], "ballmarker-design.png", { type: "image/png" });
-                const containerDesign = new DataTransfer();
-                containerDesign.items.add(designFile);
-                document.getElementById('hiddenDesignFile').files = containerDesign.files;
-
-                // 2. Om användaren laddade upp en originalbild, stoppa in den i det andra dolda fältet
-                const userFileInput = document.getElementById('imageUpload');
-                if (userFileInput.files && userFileInput.files[0]) {
-                    const containerOrig = new DataTransfer();
-                    containerOrig.items.add(userFileInput.files[0]);
-                    document.getElementById('hiddenOriginalFile').files = containerOrig.files;
                 }
 
-                // 3. Skicka formuläret till den dolda iframen
-                form.submit();
 
-                // 4. Visa bekräftelse för användaren
-                setTimeout(() => {
-                    submitBtn.style.display = 'none';
-                    successMsg.style.display = 'block';
-                }, 1000);
 
-            }, 'image/png');
+                document.getElementById("warning-text").innerText = "";
+
+                segment.style.backgroundColor = selectedColor;
+
+                segment.style.border = "0.5px solid #d0d0d0"; // Byt till hel linje när den är färgad
+
+                segment.dataset.colored = "true"; // Markera som färgad
+
+                segment.dataset.colorHex = selectedColor.toLowerCase();
+
+            };
+
+            
+
+            ferruleContainer.appendChild(segment);
+
         }
+
+
+
+        // Hjälpfunktion för att räkna unika *aktiva* färger
+
+        function getUsedColors() {
+
+            let used = [];
+
+            document.querySelectorAll(".segment").forEach(seg => {
+
+                if (seg.dataset.colored === "true") {
+
+                    let hex = seg.dataset.colorHex;
+
+                    if (!used.includes(hex)) {
+
+                        used.push(hex);
+
+                    }
+
+                }
+
+            });
+
+            return used;
+
+        }
+
+
+
+        function resetFerrule() {
+
+            document.querySelectorAll(".segment").forEach(seg => {
+
+                seg.style.backgroundColor = "transparent";
+
+                seg.style.border = "1px dashed #b0b0b0";
+
+                delete seg.dataset.colored;
+
+                delete seg.dataset.colorHex;
+
+            });
+
+            document.getElementById("warning-text").innerText = "";
+
+        }
+
+
+
+        function sendOrder() {
+
+            let designData = [];
+
+            let allColored = true;
+
+
+
+            document.querySelectorAll(".segment").forEach((seg, index) => {
+
+                if (seg.dataset.colored !== "true") {
+
+                    allColored = false;
+
+                }
+
+                const currentHex = seg.dataset.colorHex;
+
+                const foundColor = colors.find(c => c.hex.toLowerCase() === currentHex);
+
+                const colorName = foundColor ? foundColor.name : "Ej färgad";
+
+                
+
+                designData.push(`Ring ${index + 1} (Topp till Bas): ${colorName}`);
+
+            });
+
+
+
+            if (!allColored) {
+
+                document.getElementById("warning-text").innerText = "Du måste färglägga alla ringar (inklusive vita) innan du kan skicka!";
+
+                return;
+
+            }
+
+
+
+            let subject = encodeURIComponent("Prisförfrågan / Beställning av egen designad Golf Ferrule");
+
+            let body = encodeURIComponent("Hej!\n\nStandardhöjd 25mm önskas (eller enligt överenskommelse).\n\nJag vill skicka in en förfrågan/beställning på en ferrule med följande mönster:\n\n" + designData.join("\n") + "\n\nMina kontaktuppgifter:\nNamn:\nAdress:");
+
+            
+
+            window.location.href = `mailto:bilger.christian@gmail.com?subject=${subject}&body=${body}`;
+
+        }
+
     </script>
+
+
+
 </body>
+
 </html>
